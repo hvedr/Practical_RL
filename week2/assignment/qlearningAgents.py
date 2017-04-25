@@ -5,7 +5,7 @@
 from game import *
 from learningAgents import ReinforcementAgent
 from featureExtractors import *
-
+import numpy as np
 import random,util,math
 from collections import defaultdict
 
@@ -62,7 +62,7 @@ class QLearningAgent(ReinforcementAgent):
 
     "*** YOUR CODE HERE ***"
     #raise NotImplementedError
-    value = max([getQValue(self, state, action) for action in possibleActions])
+    value = max([self.getQValue( state, action) for action in possibleActions])
     return value
     
   def getPolicy(self, state):
@@ -80,8 +80,8 @@ class QLearningAgent(ReinforcementAgent):
 
     "*** YOUR CODE HERE ***"
     #raise NotImplementedError
-    actions_values = [(action,getQValue(self, state, action)) for action in possibleActions]
-    best_action = sorted(actions_values, key = lambda a,v: v)[-1][0]
+    actions_values = [(action,self.getQValue( state, action)) for action in possibleActions]
+    best_action = sorted(actions_values, key = lambda (a,v): v)[-1][0]
 
     return best_action
 
@@ -113,7 +113,7 @@ class QLearningAgent(ReinforcementAgent):
     if util.flipCoin(epsilon):
         action = np.random.choice(possibleActions)
     else:
-        action = getPolicy(self, state)
+        action = self.getPolicy( state)
 
     return action
 
@@ -133,8 +133,8 @@ class QLearningAgent(ReinforcementAgent):
     "*** YOUR CODE HERE ***"
     #raise NotImplementedError
     
-    reference_qvalue = getQValue(self, state, action)
-    computed_qvalue = reward + gamma * getValue(self, nextState)
+    reference_qvalue = self.getQValue( state, action)
+    computed_qvalue = reward + gamma * self.getValue(nextState)
     updated_qvalue = learning_rate * computed_qvalue + (1 - learning_rate) * reference_qvalue
 
     self.setQValue(state,action,updated_qvalue)
