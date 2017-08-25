@@ -1,0 +1,286 @@
+drop table if exists user_kposminin.urls_w_levels_train27;
+
+create table user_kposminin.urls_w_levels_train27 as
+select
+    concat(cookie, 0) as cookie
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    , case when ( url like "%raiffeisen.ru/retail/cards/credit%" ) then 1 else 0 end as label
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.id, 
+              al.ymd,
+              al.url,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd between "2016-05-05" and "2016-05-05"
+           ) b
+       where b.url_count > 1
+    ) a
+;
+
+drop table if exists user_kposminin.urls_w_levels_test27;
+
+create table user_kposminin.urls_w_levels_test27 as
+select
+    concat(cookie, 1) as cookie
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    , case when ( url like "%raiffeisen.ru/retail/cards/credit%" ) then 1 else 0 end as label
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.id, 
+              al.ymd,
+              al.url,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd = "2016-05-12"
+           ) b
+       where b.url_count > 1
+    ) a
+;
+
+drop table if exists user_kposminin.user_urlp_train27;
+
+create table user_kposminin.user_urlp_train27 as 
+   select 
+        cookie,
+        domain as urlp    
+    from user_kposminin.urls_w_levels_train27
+    union all
+    select
+        cookie,
+        concat(domain,'[0]',lev0) as urlp
+     from user_kposminin.urls_w_levels_train27
+    union all
+    select 
+        cookie,
+        concat(domain,'[1]',lev1) as urlp
+    from user_kposminin.urls_w_levels_train27
+    union all
+    select 
+        cookie,
+        concat(domain,'[2]',lev2) as urlp
+    from user_kposminin.urls_w_levels_train27
+;
+
+drop table if exists user_kposminin.user_urlp_test27;
+
+create table user_kposminin.user_urlp_test27 as 
+   select 
+        cookie,
+        domain as urlp    
+    from user_kposminin.urls_w_levels_test27
+    union all
+    select
+        cookie,
+        concat(domain,'[0]',lev0) as urlp
+     from user_kposminin.urls_w_levels_test27
+    union all
+    select 
+        cookie,
+        concat(domain,'[1]',lev1) as urlp
+    from user_kposminin.urls_w_levels_test27
+    union all
+    select 
+        cookie,
+        concat(domain,'[2]',lev2) as urlp
+    from user_kposminin.urls_w_levels_test27   
+;
+
+drop table if exists user_kposminin.user_train27;
+
+create table user_kposminin.user_train27 as
+select
+   cookie,
+   max(label) as label
+from 
+   user_kposminin.urls_w_levels_train27
+group by cookie;
+
+
+
+drop table if exists user_kposminin.user_test27;
+
+create table user_kposminin.user_test27 as
+select
+   cookie,
+   max(label) as label
+from 
+   user_kposminin.urls_w_levels_test27
+group by cookie;
+
+
+drop table if exists user_kposminin.urlp_score_train27;
+
+create table user_kposminin.urlp_score_train27 as
+select
+    urlp,
+    log((positives + 0.1) / (total - positives + 0.1)) as score
+from
+    (select
+        urlp,
+        sum(label) as positives,
+        count(cookie) as total
+    from
+        (select distinct
+            a.urlp,
+            a.cookie,
+            b.label
+        from 
+            (select * 
+             from user_kposminin.user_urlp_train27
+             where not ( urlp like "%raiffeisen.ru/retail/cards/credit%" or urlp like "%raiffeisen.ru%" )
+            ) a
+        left join user_kposminin.user_train27 b 
+        on a.cookie = b.cookie
+        ) c
+    group by urlp
+    ) d
+where
+    total > 1000
+    or positives > 5
+;
+
+
+drop table if exists user_kposminin.user_score_test27;
+
+create table user_kposminin.user_score_test27 as
+select
+    cs.cookie,
+    cs.score,
+    i.label
+from
+    (select 
+        u.cookie,
+        max(s.score) as score
+    from 
+        user_kposminin.user_urlp_test27 u
+    join user_kposminin.urlp_score_train27 s
+    on u.urlp = s.urlp
+    group by u.cookie) cs
+join user_kposminin.user_test27 i
+on i.cookie = cs.cookie;
+
+
+
+drop table if exists user_kposminin.user_param_tmp_train27;
+
+create table user_kposminin.user_param_tmp_train27 as
+        select 
+            u.cookie,
+            u.urlp,
+            s.score,
+            u.cnt,
+            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,
+            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,
+            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+            (case when (u.urlp rlike '[^A-Za-z]ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,
+            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+        from 
+            (select cookie, urlp, count(cookie) as cnt
+             from user_kposminin.user_urlp_train27
+             group by cookie, urlp) u
+        left join user_kposminin.urlp_score_train27 s
+            on u.urlp = s.urlp
+        order by cookie, score desc;
+
+
+drop table if exists user_kposminin.user_param_tmp_test27;
+
+create table user_kposminin.user_param_tmp_test27 as
+        select 
+            u.cookie,
+            u.urlp,
+            s.score,
+            u.cnt,
+            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,
+            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,
+            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+            (case when (u.urlp rlike '[^A-Za-z]ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,
+            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+        from 
+            (select cookie, urlp, count(cookie) as cnt
+             from user_kposminin.user_urlp_test27
+             group by cookie, urlp) u
+        left join user_kposminin.urlp_score_train27 s
+            on u.urlp = s.urlp
+        order by cookie, score desc;
+
+
+
+drop table if exists user_kposminin.user_param_train27;
+
+create table user_kposminin.user_param_train27 as
+select
+    i.label,
+    cs.*    
+from
+    (select
+        a.cookie,
+        max(a.score) as max_score,
+        sum(a.score) as sum_score,
+        avg(a.score) as avg_score,
+        sum(a.cnt) as cnt,
+        count(a.urlp) as uniq_cnt,
+        max(mobile) as mobile,
+        max(e_mailru) as e_mailru,
+        max(vk) as vk,
+        max(okru) as odnoklassniki,
+        max(fb) as fb,
+        max(instagram) as instagram,
+        max(social_other) as social_other,
+        substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str
+    from
+        user_kposminin.user_param_tmp_train27  a
+    group by cookie
+    ) cs
+join user_kposminin.user_train27 i
+    on i.cookie = cs.cookie;
+
+drop table if exists user_kposminin.user_param_test27;
+
+create table user_kposminin.user_param_test27 as
+select
+    i.label,
+    cs.*    
+from
+    (select
+        a.cookie,
+        max(a.score) as max_score,
+        sum(a.score) as sum_score,
+        avg(a.score) as avg_score,
+        sum(a.cnt) as cnt,
+        count(a.urlp) as uniq_cnt,
+        max(mobile) as mobile,
+        max(e_mailru) as e_mailru,
+        max(vk) as vk,
+        max(okru) as odnoklassniki,
+        max(fb) as fb,
+        max(instagram) as instagram,
+        max(social_other) as social_other,
+        substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str
+    from
+        user_kposminin.user_param_tmp_test27  a
+    group by cookie
+    ) cs
+join user_kposminin.user_test27 i
+    on i.cookie = cs.cookie

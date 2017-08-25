@@ -1,0 +1,32 @@
+
+
+IPython Notebook
+test:  http://m1-hadoop-client01t:7979
+prod 2 client:  http://ds-hadoop-client02p:9990/
+prod 3 client:  http://ds-hadoop-client03p:9990/
+clickhouse: http://ds-clickhouse01t:8888/
+
+
+Hive :
+test:   http://m1-hadoop-cs01t.tcsbank.ru:8888
+prod:   http://ds-hadoop-cs01p.tcsbank.ru:8888
+Manual: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF
+
+
+Нагрузка серверов Hadoop
+test:   http://m1-hadoop-cs01t.tcsbank.ru:8088/cluster/scheduler?openQueues=root.kposminin
+prod:   http://ds-hadoop-cs01p.tcsbank.ru:8088/cluster/scheduler?openQueues=root.kposminin
+
+
+Hadoop
+id:     k.p.osminin
+Server  test:  m1-hadoop-client01t
+Server  prod:  ds-hadoop-client0[1-6]p 
+Manual: https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/FileSystemShell.html
+
+http://ds-hadoop-client03p:9977/ - сервер ноутбуков из-под bigdatasys
+
+JIRA https://jira.tcsbank.ru
+wiki https://wiki.tcsbank.ru
+
+SVN: http://svn.tcsbank.ru/dwhmodel/Project/tf_infa

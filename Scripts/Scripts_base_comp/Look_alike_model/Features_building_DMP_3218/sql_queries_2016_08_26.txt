@@ -1,0 +1,300 @@
+insert into user_kposminin.calcs values(
+    25,
+    '2016-08-26',
+    "Look alike model. Features construction","Look alike model. Features construction. Task DMP-3218",
+    "train_start_date: '2016-05-05', train_end_date: '2016-05-05',
+        test_date: '2016-05-12', source_table_name: prod_raw_liveinternet.access_log,
+        target_urls: raiffeisen.ru/retail/cards/credit, exclude_urls: raiffeisen.ru/retail/cards/credit,raiffeisen.ru"
+    );
+
+drop table if exists user_kposminin.urls_w_levels_train25;
+
+create table user_kposminin.urls_w_levels_train25 as
+select
+    a.id as cookie
+    ,concat(a.id, "-", a.ymd) as object_id
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)', 1) as ref_domain
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2
+    ,a.referrer
+    ,a.timestamp
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.*,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd between "2016-05-05" and "2016-05-05"
+           ) b
+       where b.url_count > 50
+    ) a
+;
+
+drop table if exists user_kposminin.urls_w_levels_test25;
+
+create table user_kposminin.urls_w_levels_test25 as
+select
+    a.id as cookie
+    ,concat(a.id, "-", a.ymd) as object_id
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)', 1) as ref_domain
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2
+    ,a.referrer
+    ,a.timestamp
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.*,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd = "2016-05-12"
+           ) b
+       where b.url_count > 50
+    ) a
+;
+
+drop table if exists user_kposminin.user_urlp_train25;
+
+create table user_kposminin.user_urlp_train25 as 
+   select 
+        concat(cookie, 0) as cookie,
+        domain as urlp    
+    from user_kposminin.urls_w_levels_train25
+    union all
+    select
+        concat(cookie, 0) as cookie,
+        concat(domain,'[0]',lev0) as urlp
+     from user_kposminin.urls_w_levels_train25
+    union all
+    select 
+        concat(cookie, 0) as cookie,
+        concat(domain,'[1]',lev1) as urlp
+    from user_kposminin.urls_w_levels_train25
+    union all
+    select 
+        concat(cookie, 0) as cookie,
+        concat(domain,'[2]',lev2) as urlp
+    from user_kposminin.urls_w_levels_train25
+;
+
+drop table if exists user_kposminin.user_urlp_test25;
+
+create table user_kposminin.user_urlp_test25 as 
+   select 
+        concat(cookie, 1) as cookie,
+        domain as urlp    
+    from user_kposminin.urls_w_levels_test25
+    union all
+    select
+        concat(cookie, 1) as cookie,
+        concat(domain,'[0]',lev0) as urlp
+     from user_kposminin.urls_w_levels_test25
+    union all
+    select 
+        concat(cookie, 1) as cookie,
+        concat(domain,'[1]',lev1) as urlp
+    from user_kposminin.urls_w_levels_test25
+    union all
+    select 
+        concat(cookie, 1) as cookie,
+        concat(domain,'[2]',lev2) as urlp
+    from user_kposminin.urls_w_levels_test25   
+;
+
+drop table if exists user_kposminin.user_train25;
+
+create table user_kposminin.user_train25 as
+select
+   concat(id, 0)  as cookie,
+   max(case when ( url like "%raiffeisen.ru/retail/cards/credit%" ) then 1 else 0 end) as label
+from 
+   prod_raw_liveinternet.access_log al
+   where ymd between "2016-05-05" and "2016-05-05"
+group by id;
+
+
+
+drop table if exists user_kposminin.user_test25;
+
+create table user_kposminin.user_test25 as
+select
+   concat(id, 1) as cookie,
+   max(case when ( url like "%raiffeisen.ru/retail/cards/credit%" ) then 1 else 0 end) as label
+from 
+   prod_raw_liveinternet.access_log al
+   where ymd = "2016-05-12"
+group by id;
+
+
+drop table if exists user_kposminin.urlp_score_train25;
+
+create table user_kposminin.urlp_score_train_debug25 as
+select
+    urlp,
+    log((positives + 0.5) / (total - positives + 0.5)) as score,
+    positives,
+    total
+from
+    (select
+        urlp,
+        sum(label) as positives,
+        count(cookie) as total
+    from
+        (select distinct
+            a.urlp,
+            a.cookie,
+            b.label
+        from 
+            (select * 
+             from user_kposminin.user_urlp_train25
+             where not ( urlp like "%raiffeisen.ru/retail/cards/credit%" or urlp like "%raiffeisen.ru%" )
+            ) a
+        left join user_kposminin.user_train25 b 
+        on a.cookie = b.cookie
+        ) c
+    group by urlp
+    ) d
+where
+    total > 50
+    or positives > 2
+;
+
+
+drop table if exists user_kposminin.user_score_test25;
+
+create table user_kposminin.user_score_test25 as
+select
+    cs.cookie,
+    cs.score,
+    i.label
+from
+    (select 
+        u.cookie,
+        max(s.score) as score
+    from 
+        user_kposminin.user_urlp_test25 u
+    join user_kposminin.urlp_score_train25 s
+    on u.urlp = s.urlp
+    group by u.cookie) cs
+join user_kposminin.user_test25 i
+on i.cookie = cs.cookie;
+
+drop table if exists user_kposminin.user_param_train25;
+
+create table user_kposminin.user_param_train25 as
+select
+    i.label,
+    cs.*    
+from
+    (select
+        a.cookie,
+        max(a.score) as max_score,
+        sum(a.score) as sum_score,
+        avg(a.score) as avg_score,
+        percentile_approx(a.score,0.5) as median,
+        STDDEV_SAMP(a.score) as std,
+        sum(a.cnt) as cnt,
+        count(a.urlp) as uniq_cnt,
+        max(mobile) as mobile,
+        max(e_mailru) as e_mailru,
+        max(vk) as vk,
+        max(okru) as odnoklassniki,
+        max(fb) as fb,
+        max(instagram) as instagram,
+        max(social_other) as social_other,
+        substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as top10_scores_list_str
+
+    from
+        (select 
+            u.cookie,
+            u.urlp,
+            s.score,
+            u.cnt,
+            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,
+            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,
+            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+            (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,
+            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+        from 
+            (select cookie, urlp, count(cookie) as cnt
+             from user_kposminin.user_urlp_train25
+             group by cookie, urlp) u
+        left join user_kposminin.urlp_score_train25 s
+            on u.urlp = s.urlp
+        order by score desc
+        ) a
+    group by cookie
+    ) cs
+join user_kposminin.user_train25 i
+    on i.cookie = cs.cookie;
+
+drop table if exists user_kposminin.user_param_test25;
+
+create table user_kposminin.user_param_test25 as
+select
+    i.label,
+    cs.*    
+from
+    (select
+        a.cookie,
+        max(a.score) as max_score,
+        sum(a.score) as sum_score,
+        avg(a.score) as avg_score,
+        percentile_approx(a.score,0.5) as median,
+        STDDEV_SAMP(a.score) as std,
+        sum(a.cnt) as cnt,
+        count(a.urlp) as uniq_cnt,
+        max(mobile) as mobile,
+        max(e_mailru) as e_mailru,
+        max(vk) as vk,
+        max(okru) as odnoklassniki,
+        max(fb) as fb,
+        max(instagram) as instagram,
+        max(social_other) as social_other,
+        substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as top10_scores_list_str
+
+    from
+        (select 
+            u.cookie,
+            u.urlp,
+            s.score,
+            u.cnt,
+            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,
+            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,
+            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+            (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,
+            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+        from 
+            (select cookie, urlp, count(cookie) as cnt
+             from user_kposminin.user_urlp_test25
+             group by cookie, urlp) u
+        left join user_kposminin.urlp_score_train25 s
+            on u.urlp = s.urlp
+        order by score desc
+        ) a
+    group by cookie
+    ) cs
+join user_kposminin.user_test25 i
+    on i.cookie = cs.cookie

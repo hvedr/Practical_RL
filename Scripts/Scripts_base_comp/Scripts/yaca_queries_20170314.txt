@@ -1,0 +1,76 @@
+create table user_kposminin.yaca_tf_1 as 
+select
+  y.section_ind,
+  sum(s.visitors) as cnt
+from
+  user_kposminin.yaca_urlfr y
+  left join prod_features_liveinternet.urlfr_stat s on y.urlfr = s.urlfr
+where
+  s.ymd = '2017-03-09'
+group by 
+  y.section_ind
+;
+
+
+create table user_kposminin.yaca_tf as
+with f as (
+select
+  substr(section_ind,1,2) as section_ind,
+  1 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,2)
+
+union all
+
+select
+  substr(section_ind,1,4) as section_ind,
+  2 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,4)
+
+union all
+
+select
+  substr(section_ind,1,6) as section_ind,
+  3 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,6)
+
+union all
+
+select
+  substr(section_ind,1,8) as section_ind,
+  4 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,8)
+
+union all
+
+select
+  substr(section_ind,1,10) as section_ind,
+  5 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,10)
+
+union all
+
+select
+  substr(section_ind,1,12) as section_ind,
+  6 as level,
+  sum(cnt) as cnt
+from user_kposminin.yaca_tf_1
+group by substr(section_ind,1,12)
+)
+
+select
+  section_ind,
+  level,
+  cnt/(sum(cnt) over (partition by level)) as tf
+from f;
+
+

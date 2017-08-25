@@ -1,0 +1,306 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "#Config\n",
+    "from pyspark import SparkConf, SparkContext, HiveContext\n",
+    "import re\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import datetime\n",
+    "from pyspark.mllib.regression import LabeledPoint\n",
+    "from pyspark.mllib.feature import HashingTF\n",
+    "from pyspark.mllib.classification import LogisticRegressionWithSGD, NaiveBayes, NaiveBayesModel\n",
+    "import scipy.sparse as sps\n",
+    "from pyspark.mllib.linalg import Vectors\n",
+    "\n",
+    "sc.stop()\n",
+    "conf = SparkConf().set(\"spark.executor.instances\", 32).set(\"spark.driver.maxResultSize\", \"16g\")\n",
+    "sc = SparkContext(conf=conf)\n",
+    "hc = HiveContext(sc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[(u'2016-04-01', 0),\n",
+       " (u'89000165602', 1),\n",
+       " (u'0', 2),\n",
+       " (u'101', 3),\n",
+       " (u'17.67162587060412', 4),\n",
+       " (u'15.760829419148125', 5),\n",
+       " (u'14.991666666666667', 6),\n",
+       " (u'10961.942708333334', 7),\n",
+       " (u'84885', 8),\n",
+       " (u'10523465', 9),\n",
+       " (u'5488', 10)]"
+      ]
+     },
+     "execution_count": 64,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#a = sc.textFile('/user/kposminin/clust.txt').collect()\n",
+    "zip(a[0].split('\\t'),range(11))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "\n",
+    "sclust_list = sc.textFile('/user/kposminin/clust.txt') \\\n",
+    "    .map(lambda r:r.split('\\t')) \\\n",
+    "    .map(lambda r:r[3]) \\\n",
+    "    .distinct() \\\n",
+    "    .collect()\n",
+    "    \n",
+    "data = sc.textFile('/user/kposminin/clust.txt') \\\n",
+    "    .map(lambda r:r.split('\\t')) \\\n",
+    "    .map(lambda r: \n",
+    "         (tuple(r[:3]),\n",
+    "         reduce(\n",
+    "                lambda e1,e2:e1+e2,\n",
+    "                [[float(e) for e in r[4:]] if r[3] == sclust_list[i] else [0]*7 for i in range(len(sclust_list))]\n",
+    "               )\n",
+    "         )\n",
+    "     ) \\\n",
+    "    .reduceByKey(lambda v1,v2: [v1[i] + v2[i] for i in range(len(v1))])\n",
+    "    \n",
+    "train_data = data \\\n",
+    "    .filter(lambda row: row[0][0] < '2016-04-10') \\\n",
+    "    .map(lambda r: [int(r[0][2])] + r[1]) \\\n",
+    "    .toDF() \\\n",
+    "    .toPandas() \\\n",
+    "    .fillna(-1e10)\n",
+    "    \n",
+    "test_data = data \\\n",
+    "    .filter(lambda row: row[0][0] >='2016-04-10') \\\n",
+    "    .map(lambda r: [int(r[0][2])] + r[1]) \\\n",
+    "    .toDF() \\\n",
+    "    .toPandas() \\\n",
+    "    .fillna(-1e10)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AdaBoost AUCROC: 0.513756264311\n"
+     ]
+    }
+   ],
+   "source": [
+    "import sklearn\n",
+    "from sklearn.ensemble import AdaBoostClassifier\n",
+    "\n",
+    "clfAB = AdaBoostClassifier()\n",
+    "clfAB.fit(X = train_data.iloc[:,1:],y = train_data.iloc[:,0])\n",
+    "print('{0} AUCROC: {1}'.format('AdaBoost',sklearn.metrics.roc_auc_score(\n",
+    "                y_true = test_data.iloc[:,0], \n",
+    "                y_score = [e[1] for e in clfAB.predict_proba(test_data.iloc[:,1:])]\n",
+    "    )))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "LogRegr AUCROC: 0.520785285402\n"
+     ]
+    }
+   ],
+   "source": [
+    "import sklearn.linear_model\n",
+    "\n",
+    "mLR = sklearn.linear_model.LogisticRegression(penalty = 'l1',C = 1, class_weight = 'auto')\n",
+    "mLR.fit(X = train_data.iloc[:,1:],y = train_data.iloc[:,0])\n",
+    "print('{0} AUCROC: {1}'.format('LogRegr',sklearn.metrics.roc_auc_score(\n",
+    "                y_true = test_data.iloc[:,0], \n",
+    "                y_score = [e[1] for e in mLR.predict_proba(test_data.iloc[:,1:])]\n",
+    "    )))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "RandomForest AUCROC: 0.520785285402\n"
+     ]
+    }
+   ],
+   "source": [
+    "import sklearn.ensemble\n",
+    "#from sklearn import svm\n",
+    "clf = {\n",
+    "   # 'LinSVC': sklearn.svm.LinearSVC(penalty='l1', loss='squared_hinge',C=1.0, class_weight='auto', max_iter=1000),\n",
+    "   #'SVC': sklearn.svm.SVC(probability = True,max_iter = 100),\n",
+    "   # 'LogRegr': sklearn.linear_model.LogisticRegression(),\n",
+    "    'RandomForest': sklearn.ensemble.RandomForestClassifier(max_depth = 5,n_estimators = 200),\n",
+    "   # 'GBM': sklearn.ensemble.GradientBoostingClassifier(n_estimators = 400)\n",
+    "    \n",
+    "}\n",
+    "for m in clf:\n",
+    "    clf[m].fit(X = train_data.iloc[:,1:],y = train_data.iloc[:,0])\n",
+    "    print('{0} AUCROC: {1}'.format(m,sklearn.metrics.roc_auc_score(\n",
+    "                y_true = test_data.iloc[:,0], \n",
+    "                y_score = [e[1] for e in mLR.predict_proba(test_data.iloc[:,1:])]\n",
+    "    )))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[(0.033187665485110228, 17),\n",
+       " (0.032881524838219399, 28),\n",
+       " (0.030497670273517734, 35),\n",
+       " (0.030051889785211963, 15),\n",
+       " (0.026469648636988787, 14),\n",
+       " (0.026463843072232179, 42),\n",
+       " (0.025720515327880264, 36),\n",
+       " (0.025630446287349534, 21),\n",
+       " (0.025200117397178284, 24),\n",
+       " (0.024924532701670703, 1),\n",
+       " (0.024600089933557761, 7),\n",
+       " (0.024036293628863566, 22),\n",
+       " (0.02400074694746825, 29),\n",
+       " (0.023042794079620291, 49),\n",
+       " (0.022692288279939764, 38),\n",
+       " (0.022389866374961032, 41),\n",
+       " (0.022200611768736968, 48),\n",
+       " (0.022030500847706014, 8),\n",
+       " (0.021773894437032693, 27),\n",
+       " (0.021641009545412433, 2),\n",
+       " (0.021588484016987781, 43),\n",
+       " (0.021187061952751204, 20),\n",
+       " (0.02048462025746876, 16),\n",
+       " (0.020161900250071297, 23),\n",
+       " (0.020042010872969963, 19),\n",
+       " (0.019503723604999378, 37),\n",
+       " (0.019349811142072442, 4),\n",
+       " (0.018671650557980285, 31),\n",
+       " (0.017956927858824457, 33),\n",
+       " (0.017749394757589888, 30),\n",
+       " (0.017725238891866831, 3),\n",
+       " (0.017545156453711647, 44),\n",
+       " (0.017020637875997072, 32),\n",
+       " (0.017009905173981484, 34),\n",
+       " (0.016877175995985035, 46),\n",
+       " (0.016596961370562182, 9),\n",
+       " (0.016567502055933957, 6),\n",
+       " (0.01581241433211137, 12),\n",
+       " (0.015791904457095836, 40),\n",
+       " (0.015278979587108381, 45),\n",
+       " (0.014795298963545978, 18),\n",
+       " (0.014320650367897139, 13),\n",
+       " (0.014274680881004092, 10),\n",
+       " (0.014253840223045496, 11),\n",
+       " (0.013776434014855217, 5),\n",
+       " (0.013085786129231065, 25),\n",
+       " (0.012725120554010727, 39),\n",
+       " (0.01100130669684226, 47),\n",
+       " (0.010544073427743904, 26),\n",
+       " (0.008865397627097045, 0)]"
+      ]
+     },
+     "execution_count": 78,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sorted(zip(clf['RandomForest'].feature_importances_,range(len(clf['RandomForest'].feature_importances_))),reverse = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[u'1', u'533', u'713', u'40', u'186', u'464', u'101']"
+      ]
+     },
+     "execution_count": 79,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sclust_list"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

@@ -1,0 +1,113 @@
+
+-- Day successful update testing scripts
+select '4b. prod_ccall.test_segments - BDS' as tab_name,ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ccall.test_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+ 
+union all
+
+select '4a. prod_ccall.prod_segments - BDS' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ccall.prod_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+ 
+select '2.prod_lookalike.phone_x_segment - BDS ' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_lookalike.phone_x_segment
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+
+select '3.big_data_science.ccall_segments - BDS' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from big_data_science.ccall_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+
+select '1. prod_ex_machina.user_segment - source from ETL' as tab_name, a.ymd, a.segment_nm, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ex_machina.user_segment a
+inner join dds_dic.max_coeff_segment_desc b on a.segment_nm = b.segment_nm
+where a.ymd >= date_add(CURRENT_DATE,-5)
+  and b.active_flg = 1
+group by a.ymd, a.segment_nm
+
+union all
+
+select '0. prod_odd.visit_feature' as tab_name, ymd, load_src, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_odd.visit_feature where ymd > date_add(CURRENT_DATE,-5) 
+group by ymd, load_src;
+
+union all
+
+select '0. prod_odd.user_action' as tab_name, ymd, action_type, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_odd.visit_feature where ymd > date_add(CURRENT_DATE,-5) 
+group by ymd, action_type;
+
+
+-- Extended version
+
+
+-- Day successful update testing scripts
+
+select '1. prod_odd.visit_feature' as tab_name, ymd, load_src as segment_nm, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_odd.visit_feature where ymd > date_add(CURRENT_DATE,-5) 
+group by ymd, load_src
+
+union all
+
+select '2. prod_odd.user_action' as tab_name, ymd, action_type as segment_nm, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_odd.user_action where ymd > date_add(CURRENT_DATE,-5) 
+group by ymd, action_type
+
+union all
+
+select '3.prod_features_liveinternet.id_feat_accum' as tab_name, last_calc_ymd as ymd, first_calc_ymd as segment_nm, count(*) as cnt, '' as load_dttm 
+from prod_features_liveinternet.id_feat_accum
+where last_calc_ymd > date_add(CURRENT_DATE,-5) and first_calc_ymd between date_add(last_calc_ymd,-92) and date_add(last_calc_ymd,-58) 
+group by first_calc_ymd, last_calc_ymd
+
+union all
+
+select '4. prod_ex_machina.user_segment - source from ETL' as tab_name, a.ymd, a.segment_nm, count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ex_machina.user_segment a
+inner join dds_dic.max_coeff_segment_desc b on a.segment_nm = b.segment_nm
+where a.ymd >= date_add(CURRENT_DATE,-5)
+  and b.active_flg = 1
+group by a.ymd, a.segment_nm
+
+union all
+
+select '5.prod_lookalike.phone_x_segment - BDS ' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_lookalike.phone_x_segment
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+
+select '6.big_data_science.ccall_segments - BDS' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from big_data_science.ccall_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+
+select '7a. prod_ccall.prod_segments - BDS' as tab_name, ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ccall.prod_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+
+union all
+
+select '7b. prod_ccall.test_segments - BDS' as tab_name,ymd,segment_nm,count(*) as cnt, max(load_dttm) as load_dttm 
+from prod_ccall.test_segments
+where ymd >= date_add(CURRENT_DATE,-5)
+group by ymd,segment_nm
+ 
+;
+
+
+

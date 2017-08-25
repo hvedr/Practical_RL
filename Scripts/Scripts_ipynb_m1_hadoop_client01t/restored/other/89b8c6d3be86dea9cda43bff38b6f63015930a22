@@ -1,0 +1,868 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "###  Построение Look-alike модели для целевой аудитории раздела веб-сайта\n",
+    "\n",
+    "Используются различные подходы:\n",
+    "- Логистическая регрессия\n",
+    "- Naive Bayes\n",
+    "- текущий подход, рассмотренный в Wiki[https://wiki.tcsbank.ru/pages/viewpage.action?pageId=176096365].\n",
+    "\n",
+    "Сравнение методов производится по метрике AUC ROC.\n",
+    "\n",
+    "** Модификация - все через Hive, в Spark только само обучение и вывод результатов. **"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#Config\n",
+    "from pyspark import SparkConf, SparkContext, HiveContext\n",
+    "import re\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import datetime\n",
+    "import pyhs2\n",
+    "import sklearn\n",
+    "sc.stop()\n",
+    "conf = SparkConf().set(\"spark.executor.instances\", 32).set(\"spark.driver.maxResultSize\", \"16g\")\n",
+    "sc = SparkContext(conf=conf)\n",
+    "hc = HiveContext(sc)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "from pyhive import hive\n",
+    "HIVE_HOST = 'm1-hadoop-cs01t'     \n",
+    "HIVE_PORT = 10000\n",
+    "HIVE_USER = 'kposminin'\n",
+    "CONF={'hive.vectorized.execution.enabled':'true'\n",
+    "    ,'mapreduce.map.memory.mb':'4096'\n",
+    "    ,'mapreduce.map.child.java.opts':'-Xmx4g'\n",
+    "    ,'mapreduce.task.io.sort.mb':'1024'\n",
+    "    ,'mapreduce.reduce.child.java.opts':'-Xmx4g'\n",
+    "    ,'mapreduce.reduce.memory.mb':'7000'\n",
+    "    ,'mapreduce.reduce.shuffle.input.buffer.percent':'0.5'\n",
+    "    ,'mapreduce.input.fileinputformat.split.minsize':'536870912'\n",
+    "    ,'mapreduce.input.fileinputformat.split.maxsize':'1073741824'\n",
+    "    ,'hive.optimize.ppd':'true'\n",
+    "    ,'hive.merge.smallfiles.avgsize':'536870912'\n",
+    "    ,'hive.merge.mapredfiles':'true'\n",
+    "    ,'hive.merge.mapfiles':'true'\n",
+    "    ,'hive.hadoop.supports.splittable.combineinputformat':'true'\n",
+    "    ,'hive.exec.reducers.bytes.per.reducer':'536870912'\n",
+    "    ,'hive.exec.parallel':'true'\n",
+    "    ,'hive.exec.max.created.files':'10000000'\n",
+    "    ,'hive.exec.compress.output':'true'\n",
+    "    ,'hive.exec.dynamic.partition.mode':'nonstrict'\n",
+    "    ,'hive.exec.max.dynamic.partitions':'1000000'\n",
+    "    ,'hive.exec.max.dynamic.partitions.pernode':'100000'\n",
+    "    ,'io.seqfile.compression.type':'BLOCK'}\n",
+    "conn = hive.Connection(host=HIVE_HOST, port=HIVE_PORT, username=HIVE_USER, configuration=CONF)\n",
+    "cur = conn.cursor()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#Params\n",
+    "start = datetime.datetime.now()\n",
+    "target_urls =['raiffeisen.ru/retail/cards/credit']#['avito.ru/moskva'] #\n",
+    "exclude_urls = target_urls + ['raiffeisen.ru'] #['avito.ru']  #\n",
+    "\n",
+    "#source_table_name = 'user_kposminin.access_log_sample'\n",
+    "#train_start_date, train_end_date = '2016-06-01', '2016-06-02' \n",
+    "#test_date = '2016-06-30'\n",
+    "\n",
+    "source_table_name = 'prod_raw_liveinternet.access_log' # user_kposminin.access_log_sample2'\n",
+    "train_start_date, train_end_date ='2016-05-05','2016-05-05'\n",
+    "test_date = '2016-05-12'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#Hive queries\n",
+    "\n",
+    "#based on urlp column\n",
+    "\n",
+    "calc_id = 25 #int(hc.sql('select max(id) from user_kposminin.calcs').collect()[0][0]) + 1\n",
+    "\n",
+    "target_expression = '('+'or'.join(' url like \"%' + u + '%\" ' for u in target_urls)+')'\n",
+    "exclude_expression = 'not ('+'or'.join(' urlp like \"%' + u + '%\" ' for u in exclude_urls)+')'\n",
+    "\n",
+    "update_calcs_table_query = '''\n",
+    "insert into user_kposminin.calcs values(\n",
+    "    {calc_id},\n",
+    "    '{date}',\n",
+    "    \"Look alike model comparison\",\"Comparison of NaiveBayes, LogisticRegression and Current approach\",\n",
+    "    \"train_start_date: '{train_start_date}', train_end_date: '{train_end_date}',\n",
+    "        test_date: '{test_date}', source_table_name: {source_table_name},\n",
+    "        target_urls: {target_urls}, exclude_urls: {exclude_urls}\"\n",
+    "    )\n",
+    "'''.format(\n",
+    "    calc_id = calc_id, \n",
+    "    train_start_date = train_start_date, \n",
+    "    train_end_date = train_end_date, \n",
+    "    test_date = test_date,\n",
+    "    source_table_name = source_table_name,\n",
+    "    target_urls = ','.join([str(e) for e in (target_urls)]),    \n",
+    "    exclude_urls = ','.join([str(e) for e in (exclude_urls)]),\n",
+    "    date = str(datetime.datetime.now().date())\n",
+    ")\n",
+    "\n",
+    "\n",
+    "create_tables_in_hive_query = '''\n",
+    "drop table if exists user_kposminin.urls_w_levels_train{calc_id};\n",
+    "\n",
+    "create table user_kposminin.urls_w_levels_train{calc_id} as\n",
+    "select\n",
+    "    a.id as cookie\n",
+    "    ,concat(a.id, \"-\", a.ymd) as object_id\n",
+    "    ,a.ymd\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)', 1) as domain\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?', 2) lev0\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2\n",
+    "    ,a.url\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)', 1) as ref_domain\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2\n",
+    "    ,a.referrer\n",
+    "    ,a.timestamp\n",
+    "    from \n",
+    "    (\n",
+    "       select b.*\n",
+    "        from\n",
+    "           (select\n",
+    "              al.id, \n",
+    "              al.ymd,\n",
+    "              al.url,\n",
+    "              al.referrer,\n",
+    "              count(*) over (partition by url) as url_count\n",
+    "           from {source_table_name} al\n",
+    "              where ymd between \"{train_start_date}\" and \"{train_end_date}\"\n",
+    "           ) b\n",
+    "       where b.url_count > 50\n",
+    "    ) a\n",
+    ";\n",
+    "\n",
+    "drop table if exists user_kposminin.urls_w_levels_test{calc_id};\n",
+    "\n",
+    "create table user_kposminin.urls_w_levels_test{calc_id} as\n",
+    "select\n",
+    "    a.id as cookie\n",
+    "    ,concat(a.id, \"-\", a.ymd) as object_id\n",
+    "    ,a.ymd\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)', 1) as domain\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?', 2) lev0\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1\n",
+    "    ,regexp_extract(regexp_extract(a.url, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2\n",
+    "    ,a.url\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)', 1) as ref_domain\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1\n",
+    "    ,regexp_extract(regexp_extract(a.referrer, \"([^\\?]*)\", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2\n",
+    "    ,a.referrer\n",
+    "    ,a.timestamp\n",
+    "    from \n",
+    "    (\n",
+    "       select b.*\n",
+    "        from\n",
+    "           (select\n",
+    "              al.id, \n",
+    "              al.ymd,\n",
+    "              al.url,\n",
+    "              al.referrer,\n",
+    "              count(*) over (partition by url) as url_count\n",
+    "           from {source_table_name} al\n",
+    "              where ymd = \"{test_date}\"\n",
+    "           ) b\n",
+    "       where b.url_count > 50\n",
+    "    ) a\n",
+    ";\n",
+    "\n",
+    "drop table if exists user_kposminin.user_urlp_train{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_urlp_train{calc_id} as \n",
+    "   select \n",
+    "        concat(cookie, 0) as cookie,\n",
+    "        domain as urlp    \n",
+    "    from user_kposminin.urls_w_levels_train{calc_id}\n",
+    "    union all\n",
+    "    select\n",
+    "        concat(cookie, 0) as cookie,\n",
+    "        concat(domain,'[0]',lev0) as urlp\n",
+    "     from user_kposminin.urls_w_levels_train{calc_id}\n",
+    "    union all\n",
+    "    select \n",
+    "        concat(cookie, 0) as cookie,\n",
+    "        concat(domain,'[1]',lev1) as urlp\n",
+    "    from user_kposminin.urls_w_levels_train{calc_id}\n",
+    "    union all\n",
+    "    select \n",
+    "        concat(cookie, 0) as cookie,\n",
+    "        concat(domain,'[2]',lev2) as urlp\n",
+    "    from user_kposminin.urls_w_levels_train{calc_id}\n",
+    ";\n",
+    "\n",
+    "drop table if exists user_kposminin.user_urlp_test{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_urlp_test{calc_id} as \n",
+    "   select \n",
+    "        concat(cookie, 1) as cookie,\n",
+    "        domain as urlp    \n",
+    "    from user_kposminin.urls_w_levels_test{calc_id}\n",
+    "    union all\n",
+    "    select\n",
+    "        concat(cookie, 1) as cookie,\n",
+    "        concat(domain,'[0]',lev0) as urlp\n",
+    "     from user_kposminin.urls_w_levels_test{calc_id}\n",
+    "    union all\n",
+    "    select \n",
+    "        concat(cookie, 1) as cookie,\n",
+    "        concat(domain,'[1]',lev1) as urlp\n",
+    "    from user_kposminin.urls_w_levels_test{calc_id}\n",
+    "    union all\n",
+    "    select \n",
+    "        concat(cookie, 1) as cookie,\n",
+    "        concat(domain,'[2]',lev2) as urlp\n",
+    "    from user_kposminin.urls_w_levels_test{calc_id}   \n",
+    ";\n",
+    "\n",
+    "drop table if exists user_kposminin.user_train{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_train{calc_id} as\n",
+    "select\n",
+    "   concat(id, 0)  as cookie,\n",
+    "   max(case when {target_expression} then 1 else 0 end) as label\n",
+    "from \n",
+    "   {source_table_name} al\n",
+    "   where ymd between \"{train_start_date}\" and \"{train_end_date}\"\n",
+    "group by id;\n",
+    "\n",
+    "\n",
+    "\n",
+    "drop table if exists user_kposminin.user_test{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_test{calc_id} as\n",
+    "select\n",
+    "   concat(id, 1) as cookie,\n",
+    "   max(case when {target_expression} then 1 else 0 end) as label\n",
+    "from \n",
+    "   {source_table_name} al\n",
+    "   where ymd = \"{test_date}\"\n",
+    "group by id;\n",
+    "\n",
+    "\n",
+    "drop table if exists user_kposminin.urlp_score_train{calc_id};\n",
+    "\n",
+    "create table user_kposminin.urlp_score_train{calc_id} as\n",
+    "select\n",
+    "    urlp,\n",
+    "    log((positives + 0.5) / (total - positives + 0.5)) as score\n",
+    "from\n",
+    "    (select\n",
+    "        urlp,\n",
+    "        sum(label) as positives,\n",
+    "        count(cookie) as total\n",
+    "    from\n",
+    "        (select distinct\n",
+    "            a.urlp,\n",
+    "            a.cookie,\n",
+    "            b.label\n",
+    "        from \n",
+    "            (select * \n",
+    "             from user_kposminin.user_urlp_train{calc_id}\n",
+    "             where {exclude_expression}\n",
+    "            ) a\n",
+    "        left join user_kposminin.user_train{calc_id} b \n",
+    "        on a.cookie = b.cookie\n",
+    "        ) c\n",
+    "    group by urlp\n",
+    "    ) d\n",
+    "where\n",
+    "    total > 50\n",
+    "    or positives > 2\n",
+    ";\n",
+    "\n",
+    "\n",
+    "drop table if exists user_kposminin.user_score_test{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_score_test{calc_id} as\n",
+    "select\n",
+    "    cs.cookie,\n",
+    "    cs.score,\n",
+    "    i.label\n",
+    "from\n",
+    "    (select \n",
+    "        u.cookie,\n",
+    "        max(s.score) as score\n",
+    "    from \n",
+    "        user_kposminin.user_urlp_test{calc_id} u\n",
+    "    join user_kposminin.urlp_score_train{calc_id} s\n",
+    "    on u.urlp = s.urlp\n",
+    "    group by u.cookie) cs\n",
+    "join user_kposminin.user_test{calc_id} i\n",
+    "on i.cookie = cs.cookie;\n",
+    "\n",
+    "drop table if exists user_kposminin.user_param_train{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_param_train{calc_id} as\n",
+    "select\n",
+    "    i.label,\n",
+    "    cs.*    \n",
+    "from\n",
+    "    (select\n",
+    "        a.cookie,\n",
+    "        max(a.score) as max_score,\n",
+    "        sum(a.score) as sum_score,\n",
+    "        avg(a.score) as avg_score,\n",
+    "        sum(a.cnt) as cnt,\n",
+    "        count(a.urlp) as uniq_cnt,\n",
+    "        max(mobile) as mobile,\n",
+    "        max(e_mailru) as e_mailru,\n",
+    "        max(vk) as vk,\n",
+    "        max(okru) as odnoklassniki,\n",
+    "        max(fb) as fb,\n",
+    "        max(instagram) as instagram,\n",
+    "        max(social_other) as social_other,\n",
+    "        substr(concat_ws(\",\",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str\n",
+    "    from\n",
+    "        (select \n",
+    "            u.cookie,\n",
+    "            u.urlp,\n",
+    "            s.score,\n",
+    "            u.cnt,\n",
+    "            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,\n",
+    "            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,\n",
+    "            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,\n",
+    "            (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,\n",
+    "            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,\n",
+    "            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,\n",
+    "            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other\n",
+    "        from \n",
+    "            (select cookie, urlp, count(cookie) as cnt\n",
+    "             from user_kposminin.user_urlp_train{calc_id}\n",
+    "             group by cookie, urlp) u\n",
+    "        left join user_kposminin.urlp_score_train{calc_id} s\n",
+    "            on u.urlp = s.urlp\n",
+    "        order by score desc\n",
+    "        ) a\n",
+    "    group by cookie\n",
+    "    ) cs\n",
+    "join user_kposminin.user_train{calc_id} i\n",
+    "    on i.cookie = cs.cookie;\n",
+    "\n",
+    "drop table if exists user_kposminin.user_param_test{calc_id};\n",
+    "\n",
+    "create table user_kposminin.user_param_test{calc_id} as\n",
+    "select\n",
+    "    i.label,\n",
+    "    cs.*    \n",
+    "from\n",
+    "    (select\n",
+    "        a.cookie,\n",
+    "        max(a.score) as max_score,\n",
+    "        sum(a.score) as sum_score,\n",
+    "        avg(a.score) as avg_score,\n",
+    "        sum(a.cnt) as cnt,\n",
+    "        count(a.urlp) as uniq_cnt,\n",
+    "        max(mobile) as mobile,\n",
+    "        max(e_mailru) as e_mailru,\n",
+    "        max(vk) as vk,\n",
+    "        max(okru) as odnoklassniki,\n",
+    "        max(fb) as fb,\n",
+    "        max(instagram) as instagram,\n",
+    "        max(social_other) as social_other,\n",
+    "        substr(concat_ws(\",\",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str\n",
+    "    from\n",
+    "        (select \n",
+    "            u.cookie,\n",
+    "            u.urlp,\n",
+    "            s.score,\n",
+    "            u.cnt,\n",
+    "            (case when (u.urlp like 'm.%') then 1 else 0 end) as mobile,\n",
+    "            (case when (u.urlp like '%e.mail.ru%') then 1 else 0 end) as e_mailru,\n",
+    "            (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,\n",
+    "            (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,\n",
+    "            (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,\n",
+    "            (case when (u.urlp like '%instagram.com%') then 1 else 0 end) as instagram,\n",
+    "            (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other\n",
+    "        from \n",
+    "            (select cookie, urlp, count(cookie) as cnt\n",
+    "             from user_kposminin.user_urlp_test{calc_id}\n",
+    "             group by cookie, urlp) u\n",
+    "        left join user_kposminin.urlp_score_train{calc_id} s\n",
+    "            on u.urlp = s.urlp\n",
+    "        order by score desc\n",
+    "        ) a\n",
+    "    group by cookie\n",
+    "    ) cs\n",
+    "join user_kposminin.user_test{calc_id} i\n",
+    "    on i.cookie = cs.cookie'''.format(\n",
+    "    calc_id = calc_id, \n",
+    "    train_start_date = train_start_date, \n",
+    "    train_end_date = train_end_date, \n",
+    "    test_date = test_date,\n",
+    "    source_table_name = source_table_name,\n",
+    "    target_expression = target_expression,\n",
+    "    exclude_expression = exclude_expression\n",
+    ")\n",
+    "\n",
+    "train_labeledpoint_query = '''\n",
+    "select\n",
+    "    *\n",
+    "from \n",
+    "    user_kposminin.user_param_train{calc_id}\n",
+    "'''.format(calc_id = calc_id)\n",
+    "\n",
+    "test_labeledpoint_query = '''\n",
+    "select\n",
+    "    *\n",
+    "from \n",
+    "    user_kposminin.user_param_test{calc_id}\n",
+    "'''.format(calc_id = calc_id)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#print(create_tables_in_hive_query)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "** Создаем таблицы в Hive **"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "# Make calculations and create tables in Hive\n",
+    "\n",
+    "#cur.execute(update_calcs_table_query)\n",
+    "#for q in create_tables_in_hive_query.split(';'):\n",
+    "#    print(create_tables_in_hive_query.split(';').index(q))\n",
+    "#    cur.execute(q)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "collapsed": true
+   },
+   "source": [
+    "** Загрузка данных **"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#convert_score_str(a[3][16],-100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "PythonRDD[159] at RDD at PythonRDD.scala:43"
+      ]
+     },
+     "execution_count": 88,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#Load train and test data to Spark\n",
+    "from pyspark.mllib.regression import LabeledPoint\n",
+    "from pyspark.mllib.feature import HashingTF\n",
+    "from pyspark.mllib.classification import LogisticRegressionWithSGD, NaiveBayes, NaiveBayesModel\n",
+    "import numbers\n",
+    "\n",
+    "def is_number(s):\n",
+    "    try:\n",
+    "        float(s)\n",
+    "        return True\n",
+    "    except ValueError:\n",
+    "        return False\n",
+    "\n",
+    "def convert_score_str(s,min_sc):\n",
+    "    res = [float(e) for e in s.split(',')[:11] if is_number(e)]\n",
+    "    return res + [min_sc] * (10 - len(res))\n",
+    "# tf = HashingTF(numFeatures = 10 ** 6)\n",
+    "\n",
+    "#transform urls (as Bag of Words) into features and form features with labels\n",
+    "train_data = hc.sql(train_labeledpoint_query).rdd \\\n",
+    "   .filter(lambda r: all(isinstance(e,numbers.Number) for e in [r['label']] + list(r[2:16]))).map( \n",
+    "      lambda r: LabeledPoint(r.label,[r[2],r[4],r[5],r[6],r[7],r[8],r[9], r[10],sum(r[11:16])] + convert_score_str(r[16],-200))\n",
+    "   )\n",
+    "\n",
+    "train_data.cache()\n",
+    "\n",
+    "test_data = hc.sql(test_labeledpoint_query).rdd \\\n",
+    "    .filter(lambda r: all(isinstance(e,numbers.Number) for e in [r['label']] + list(r[2:16]))).map( \n",
+    "      lambda r: LabeledPoint(r.label,[r[2],r[4],r[5],r[6],r[7],r[8],r[9], r[10],sum(r[11:16])] + convert_score_str(r[16],-200))\n",
+    "    )\n",
+    "test_data.cache()\n",
+    "#test_data = hc.sql(test_labeledpoint_query).rdd.map(lambda r: LabeledPoint(r.label,tf.transform(r.url_list)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "print(datetime.datetime.now() - start)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 85,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Row(label=0, cookie=u'00000022C6808331A5840', max_score=-6.274762021241939, sum_score=-90.01644097484997, avg_score=-10.00182677498333, median=-10.391070287834454, std=2.026861185767819, cnt=16, uniq_cnt=9, mobile=0, e_mailru=0, vk=0, odnoklassniki=0, fb=0, instagram=0, social_other=0, top10_scores_list_str=u'-11.97552,-11.69114,-8.974491,-8.974491,-8.974491,-9.090993,-12.03027,-12.03027,-6.274762')"
+      ]
+     },
+     "execution_count": 85,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "r"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "Py4JJavaError",
+     "evalue": "An error occurred while calling o672.trainRandomForestModel.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 17 in stage 41.0 failed 4 times, most recent failure: Lost task 17.3 in stage 41.0 (TID 429, m1-hadoop-wk01t.tcsbank.ru): java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE\n\tat sun.nio.ch.FileChannelImpl.map(FileChannelImpl.java:836)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:127)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:115)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:1250)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:129)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:136)\n\tat org.apache.spark.storage.BlockManager.doGetLocal(BlockManager.scala:503)\n\tat org.apache.spark.storage.BlockManager.getLocal(BlockManager.scala:420)\n\tat org.apache.spark.storage.BlockManager.get(BlockManager.scala:625)\n\tat org.apache.spark.CacheManager.getOrCompute(CacheManager.scala:44)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:268)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1845)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1858)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1929)\n\tat org.apache.spark.rdd.RDD$$anonfun$collect$1.apply(RDD.scala:927)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.collect(RDD.scala:926)\n\tat org.apache.spark.rdd.PairRDDFunctions$$anonfun$collectAsMap$1.apply(PairRDDFunctions.scala:741)\n\tat org.apache.spark.rdd.PairRDDFunctions$$anonfun$collectAsMap$1.apply(PairRDDFunctions.scala:740)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.PairRDDFunctions.collectAsMap(PairRDDFunctions.scala:740)\n\tat org.apache.spark.mllib.tree.DecisionTree$.findBestSplits(DecisionTree.scala:651)\n\tat org.apache.spark.mllib.tree.RandomForest.run(RandomForest.scala:233)\n\tat org.apache.spark.mllib.tree.RandomForest$.trainClassifier(RandomForest.scala:289)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainRandomForestModel(PythonMLLibAPI.scala:784)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE\n\tat sun.nio.ch.FileChannelImpl.map(FileChannelImpl.java:836)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:127)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:115)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:1250)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:129)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:136)\n\tat org.apache.spark.storage.BlockManager.doGetLocal(BlockManager.scala:503)\n\tat org.apache.spark.storage.BlockManager.getLocal(BlockManager.scala:420)\n\tat org.apache.spark.storage.BlockManager.get(BlockManager.scala:625)\n\tat org.apache.spark.CacheManager.getOrCompute(CacheManager.scala:44)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:268)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mPy4JJavaError\u001b[0m                             Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-90-3c17f8b9b25e>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      3\u001b[0m modelRF = RandomForest.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},\n\u001b[0;32m      4\u001b[0m                                      \u001b[0mnumTrees\u001b[0m\u001b[1;33m=\u001b[0m\u001b[1;36m1500\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfeatureSubsetStrategy\u001b[0m\u001b[1;33m=\u001b[0m\u001b[1;34m\"auto\"\u001b[0m\u001b[1;33m,\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 5\u001b[1;33m                                      impurity='gini', maxDepth=10)\n\u001b[0m\u001b[0;32m      6\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      7\u001b[0m \u001b[1;31m# Evaluate model on test instances and compute test error\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/tree.pyc\u001b[0m in \u001b[0;36mtrainClassifier\u001b[1;34m(cls, data, numClasses, categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins, seed)\u001b[0m\n\u001b[0;32m    377\u001b[0m         return cls._train(data, \"classification\", numClasses,\n\u001b[0;32m    378\u001b[0m                           \u001b[0mcategoricalFeaturesInfo\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mnumTrees\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfeatureSubsetStrategy\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mimpurity\u001b[0m\u001b[1;33m,\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 379\u001b[1;33m                           maxDepth, maxBins, seed)\n\u001b[0m\u001b[0;32m    380\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    381\u001b[0m     \u001b[1;33m@\u001b[0m\u001b[0mclassmethod\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/tree.pyc\u001b[0m in \u001b[0;36m_train\u001b[1;34m(cls, data, algo, numClasses, categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins, seed)\u001b[0m\n\u001b[0;32m    294\u001b[0m         model = callMLlibFunc(\"trainRandomForestModel\", data, algo, numClasses,\n\u001b[0;32m    295\u001b[0m                               \u001b[0mcategoricalFeaturesInfo\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mnumTrees\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfeatureSubsetStrategy\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mimpurity\u001b[0m\u001b[1;33m,\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 296\u001b[1;33m                               maxDepth, maxBins, seed)\n\u001b[0m\u001b[0;32m    297\u001b[0m         \u001b[1;32mreturn\u001b[0m \u001b[0mRandomForestModel\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mmodel\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    298\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallMLlibFunc\u001b[1;34m(name, *args)\u001b[0m\n\u001b[0;32m    128\u001b[0m     \u001b[0msc\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mSparkContext\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgetOrCreate\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    129\u001b[0m     \u001b[0mapi\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mgetattr\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_jvm\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPythonMLLibAPI\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mname\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 130\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0mcallJavaFunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mapi\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    131\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    132\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallJavaFunc\u001b[1;34m(sc, func, *args)\u001b[0m\n\u001b[0;32m    121\u001b[0m     \u001b[1;34m\"\"\" Call Java Function \"\"\"\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    122\u001b[0m     \u001b[0margs\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0m_py2java\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0ma\u001b[0m \u001b[1;32min\u001b[0m \u001b[0margs\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 123\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0m_java2py\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    124\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    125\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36m__call__\u001b[1;34m(self, *args)\u001b[0m\n\u001b[0;32m    811\u001b[0m         \u001b[0manswer\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgateway_client\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msend_command\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    812\u001b[0m         return_value = get_return_value(\n\u001b[1;32m--> 813\u001b[1;33m             answer, self.gateway_client, self.target_id, self.name)\n\u001b[0m\u001b[0;32m    814\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    815\u001b[0m         \u001b[1;32mfor\u001b[0m \u001b[0mtemp_arg\u001b[0m \u001b[1;32min\u001b[0m \u001b[0mtemp_args\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/sql/utils.pyc\u001b[0m in \u001b[0;36mdeco\u001b[1;34m(*a, **kw)\u001b[0m\n\u001b[0;32m     43\u001b[0m     \u001b[1;32mdef\u001b[0m \u001b[0mdeco\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     44\u001b[0m         \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 45\u001b[1;33m             \u001b[1;32mreturn\u001b[0m \u001b[0mf\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     46\u001b[0m         \u001b[1;32mexcept\u001b[0m \u001b[0mpy4j\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mprotocol\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPy4JJavaError\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     47\u001b[0m             \u001b[0ms\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mjava_exception\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtoString\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/protocol.py\u001b[0m in \u001b[0;36mget_return_value\u001b[1;34m(answer, gateway_client, target_id, name)\u001b[0m\n\u001b[0;32m    306\u001b[0m                 raise Py4JJavaError(\n\u001b[0;32m    307\u001b[0m                     \u001b[1;34m\"An error occurred while calling {0}{1}{2}.\\n\"\u001b[0m\u001b[1;33m.\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 308\u001b[1;33m                     format(target_id, \".\", name), value)\n\u001b[0m\u001b[0;32m    309\u001b[0m             \u001b[1;32melse\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    310\u001b[0m                 raise Py4JError(\n",
+      "\u001b[1;31mPy4JJavaError\u001b[0m: An error occurred while calling o672.trainRandomForestModel.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 17 in stage 41.0 failed 4 times, most recent failure: Lost task 17.3 in stage 41.0 (TID 429, m1-hadoop-wk01t.tcsbank.ru): java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE\n\tat sun.nio.ch.FileChannelImpl.map(FileChannelImpl.java:836)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:127)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:115)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:1250)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:129)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:136)\n\tat org.apache.spark.storage.BlockManager.doGetLocal(BlockManager.scala:503)\n\tat org.apache.spark.storage.BlockManager.getLocal(BlockManager.scala:420)\n\tat org.apache.spark.storage.BlockManager.get(BlockManager.scala:625)\n\tat org.apache.spark.CacheManager.getOrCompute(CacheManager.scala:44)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:268)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1845)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1858)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1929)\n\tat org.apache.spark.rdd.RDD$$anonfun$collect$1.apply(RDD.scala:927)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.collect(RDD.scala:926)\n\tat org.apache.spark.rdd.PairRDDFunctions$$anonfun$collectAsMap$1.apply(PairRDDFunctions.scala:741)\n\tat org.apache.spark.rdd.PairRDDFunctions$$anonfun$collectAsMap$1.apply(PairRDDFunctions.scala:740)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.PairRDDFunctions.collectAsMap(PairRDDFunctions.scala:740)\n\tat org.apache.spark.mllib.tree.DecisionTree$.findBestSplits(DecisionTree.scala:651)\n\tat org.apache.spark.mllib.tree.RandomForest.run(RandomForest.scala:233)\n\tat org.apache.spark.mllib.tree.RandomForest$.trainClassifier(RandomForest.scala:289)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainRandomForestModel(PythonMLLibAPI.scala:784)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE\n\tat sun.nio.ch.FileChannelImpl.map(FileChannelImpl.java:836)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:127)\n\tat org.apache.spark.storage.DiskStore$$anonfun$getBytes$2.apply(DiskStore.scala:115)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:1250)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:129)\n\tat org.apache.spark.storage.DiskStore.getBytes(DiskStore.scala:136)\n\tat org.apache.spark.storage.BlockManager.doGetLocal(BlockManager.scala:503)\n\tat org.apache.spark.storage.BlockManager.getLocal(BlockManager.scala:420)\n\tat org.apache.spark.storage.BlockManager.get(BlockManager.scala:625)\n\tat org.apache.spark.CacheManager.getOrCompute(CacheManager.scala:44)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:268)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n"
+     ]
+    }
+   ],
+   "source": [
+    "from pyspark.mllib.tree import RandomForest, RandomForestModel\n",
+    "\n",
+    "modelRF = RandomForest.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},\n",
+    "                                     numTrees=150, featureSubsetStrategy=\"auto\",\n",
+    "                                     impurity='gini', maxDepth=5)\n",
+    "\n",
+    "# Evaluate model on test instances and compute test error\n",
+    "predictions = modelRF.predict(test_data.map(lambda x: x.features))\n",
+    "labelsAndPredictions = test_data.map(lambda lp: lp.label).zip(predictions)\n",
+    "testMSE = labelsAndPredictions.map(lambda (v, p): (v - p) * (v - p)).sum() /\\\n",
+    "    float(test_data.count())\n",
+    "print('Test Mean Squared Error = ' + str(testMSE))\n",
+    "print('AUCROC {0}'.format(\n",
+    "        sklearn.metrics.roc_auc_score(\n",
+    "            labelsAndPredictions.map(lambda (v, p):v),\n",
+    "            labelsAndPredictions.map(lambda (v, p):p)\n",
+    "        ))\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "Py4JJavaError",
+     "evalue": "An error occurred while calling o195.trainNaiveBayesModel.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 9.0 failed 4 times, most recent failure: Lost task 0.3 in stage 9.0 (TID 19, m1-hadoop-wk02t.tcsbank.ru): org.apache.spark.SparkException: Naive Bayes requires nonnegative feature values but found [-5.783825182329737,-31.147048733521736,-6.229409746704347,24.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-5.783825,-6.167516,-6.388561,-6.401917,-6.405228].\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:365)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:359)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:388)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:384)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:187)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:186)\n\tat org.apache.spark.util.collection.AppendOnlyMap.changeValue(AppendOnlyMap.scala:148)\n\tat org.apache.spark.util.collection.SizeTrackingAppendOnlyMap.changeValue(SizeTrackingAppendOnlyMap.scala:32)\n\tat org.apache.spark.util.collection.ExternalSorter.insertAll(ExternalSorter.scala:192)\n\tat org.apache.spark.shuffle.sort.SortShuffleWriter.write(SortShuffleWriter.scala:64)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1845)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1858)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1929)\n\tat org.apache.spark.rdd.RDD$$anonfun$collect$1.apply(RDD.scala:927)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.collect(RDD.scala:926)\n\tat org.apache.spark.mllib.classification.NaiveBayes.run(NaiveBayes.scala:401)\n\tat org.apache.spark.mllib.classification.NaiveBayes$.train(NaiveBayes.scala:483)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainNaiveBayesModel(PythonMLLibAPI.scala:305)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: org.apache.spark.SparkException: Naive Bayes requires nonnegative feature values but found [-5.783825182329737,-31.147048733521736,-6.229409746704347,24.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-5.783825,-6.167516,-6.388561,-6.401917,-6.405228].\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:365)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:359)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:388)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:384)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:187)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:186)\n\tat org.apache.spark.util.collection.AppendOnlyMap.changeValue(AppendOnlyMap.scala:148)\n\tat org.apache.spark.util.collection.SizeTrackingAppendOnlyMap.changeValue(SizeTrackingAppendOnlyMap.scala:32)\n\tat org.apache.spark.util.collection.ExternalSorter.insertAll(ExternalSorter.scala:192)\n\tat org.apache.spark.shuffle.sort.SortShuffleWriter.write(SortShuffleWriter.scala:64)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mPy4JJavaError\u001b[0m                             Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-95-848ac08cea65>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[1;31m#Train NaiveBayes model\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      2\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 3\u001b[1;33m \u001b[0mmodelNB\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mNaiveBayes\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtrain\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mtrain_data\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m      4\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      5\u001b[0m \u001b[1;32mdef\u001b[0m \u001b[0mpredict_proba_NB\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mf\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mmodel\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/classification.pyc\u001b[0m in \u001b[0;36mtrain\u001b[1;34m(cls, data, lambda_)\u001b[0m\n\u001b[0;32m    646\u001b[0m         \u001b[1;32mif\u001b[0m \u001b[1;32mnot\u001b[0m \u001b[0misinstance\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mfirst\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mLabeledPoint\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    647\u001b[0m             \u001b[1;32mraise\u001b[0m \u001b[0mValueError\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m\"`data` should be an RDD of LabeledPoint\"\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 648\u001b[1;33m         \u001b[0mlabels\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mpi\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mtheta\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mcallMLlibFunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m\"trainNaiveBayesModel\"\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mdata\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mlambda_\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    649\u001b[0m         \u001b[1;32mreturn\u001b[0m \u001b[0mNaiveBayesModel\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mlabels\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtoArray\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mpi\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtoArray\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mnumpy\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0marray\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mtheta\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    650\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallMLlibFunc\u001b[1;34m(name, *args)\u001b[0m\n\u001b[0;32m    128\u001b[0m     \u001b[0msc\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mSparkContext\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgetOrCreate\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    129\u001b[0m     \u001b[0mapi\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mgetattr\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_jvm\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPythonMLLibAPI\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mname\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 130\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0mcallJavaFunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mapi\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    131\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    132\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallJavaFunc\u001b[1;34m(sc, func, *args)\u001b[0m\n\u001b[0;32m    121\u001b[0m     \u001b[1;34m\"\"\" Call Java Function \"\"\"\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    122\u001b[0m     \u001b[0margs\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0m_py2java\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0ma\u001b[0m \u001b[1;32min\u001b[0m \u001b[0margs\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 123\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0m_java2py\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    124\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    125\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36m__call__\u001b[1;34m(self, *args)\u001b[0m\n\u001b[0;32m    811\u001b[0m         \u001b[0manswer\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgateway_client\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msend_command\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    812\u001b[0m         return_value = get_return_value(\n\u001b[1;32m--> 813\u001b[1;33m             answer, self.gateway_client, self.target_id, self.name)\n\u001b[0m\u001b[0;32m    814\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    815\u001b[0m         \u001b[1;32mfor\u001b[0m \u001b[0mtemp_arg\u001b[0m \u001b[1;32min\u001b[0m \u001b[0mtemp_args\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/sql/utils.pyc\u001b[0m in \u001b[0;36mdeco\u001b[1;34m(*a, **kw)\u001b[0m\n\u001b[0;32m     43\u001b[0m     \u001b[1;32mdef\u001b[0m \u001b[0mdeco\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     44\u001b[0m         \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 45\u001b[1;33m             \u001b[1;32mreturn\u001b[0m \u001b[0mf\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     46\u001b[0m         \u001b[1;32mexcept\u001b[0m \u001b[0mpy4j\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mprotocol\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPy4JJavaError\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     47\u001b[0m             \u001b[0ms\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mjava_exception\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtoString\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/protocol.py\u001b[0m in \u001b[0;36mget_return_value\u001b[1;34m(answer, gateway_client, target_id, name)\u001b[0m\n\u001b[0;32m    306\u001b[0m                 raise Py4JJavaError(\n\u001b[0;32m    307\u001b[0m                     \u001b[1;34m\"An error occurred while calling {0}{1}{2}.\\n\"\u001b[0m\u001b[1;33m.\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 308\u001b[1;33m                     format(target_id, \".\", name), value)\n\u001b[0m\u001b[0;32m    309\u001b[0m             \u001b[1;32melse\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    310\u001b[0m                 raise Py4JError(\n",
+      "\u001b[1;31mPy4JJavaError\u001b[0m: An error occurred while calling o195.trainNaiveBayesModel.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 9.0 failed 4 times, most recent failure: Lost task 0.3 in stage 9.0 (TID 19, m1-hadoop-wk02t.tcsbank.ru): org.apache.spark.SparkException: Naive Bayes requires nonnegative feature values but found [-5.783825182329737,-31.147048733521736,-6.229409746704347,24.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-5.783825,-6.167516,-6.388561,-6.401917,-6.405228].\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:365)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:359)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:388)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:384)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:187)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:186)\n\tat org.apache.spark.util.collection.AppendOnlyMap.changeValue(AppendOnlyMap.scala:148)\n\tat org.apache.spark.util.collection.SizeTrackingAppendOnlyMap.changeValue(SizeTrackingAppendOnlyMap.scala:32)\n\tat org.apache.spark.util.collection.ExternalSorter.insertAll(ExternalSorter.scala:192)\n\tat org.apache.spark.shuffle.sort.SortShuffleWriter.write(SortShuffleWriter.scala:64)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1845)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1858)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1929)\n\tat org.apache.spark.rdd.RDD$$anonfun$collect$1.apply(RDD.scala:927)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.collect(RDD.scala:926)\n\tat org.apache.spark.mllib.classification.NaiveBayes.run(NaiveBayes.scala:401)\n\tat org.apache.spark.mllib.classification.NaiveBayes$.train(NaiveBayes.scala:483)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainNaiveBayesModel(PythonMLLibAPI.scala:305)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: org.apache.spark.SparkException: Naive Bayes requires nonnegative feature values but found [-5.783825182329737,-31.147048733521736,-6.229409746704347,24.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-5.783825,-6.167516,-6.388561,-6.401917,-6.405228].\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:365)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$17.apply(NaiveBayes.scala:359)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:388)\n\tat org.apache.spark.mllib.classification.NaiveBayes$$anonfun$20.apply(NaiveBayes.scala:384)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:187)\n\tat org.apache.spark.util.collection.ExternalSorter$$anonfun$5.apply(ExternalSorter.scala:186)\n\tat org.apache.spark.util.collection.AppendOnlyMap.changeValue(AppendOnlyMap.scala:148)\n\tat org.apache.spark.util.collection.SizeTrackingAppendOnlyMap.changeValue(SizeTrackingAppendOnlyMap.scala:32)\n\tat org.apache.spark.util.collection.ExternalSorter.insertAll(ExternalSorter.scala:192)\n\tat org.apache.spark.shuffle.sort.SortShuffleWriter.write(SortShuffleWriter.scala:64)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:73)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:41)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n"
+     ]
+    }
+   ],
+   "source": [
+    "#Train NaiveBayes model\n",
+    "\n",
+    "# modelNB = NaiveBayes.train(train_data)\n",
+    "\n",
+    "def predict_proba_NB(f,model):\n",
+    "    import numpy as np\n",
+    "    '''\n",
+    "    Naive Bayes model prediction with probability. f is features [Sparse] vector. model is mllib.NaiveBayesModel.\n",
+    "    Function selects winning class with it probability.\n",
+    "    Output: tuple with model selected class number as first element (type int) and it probability as second (type float).\n",
+    "    '''\n",
+    "    logp = [[i,f.dot(model.theta[i]) + model.pi[i]] for i in range(len(model.theta))] # classes with log probabilities\n",
+    "    wi = sorted(logp, key = lambda e:  - e[1])[0][0] #winning index\n",
+    "    prob = 1./sum([np.exp(e[1] - logp[wi][1]) for e in logp]) #winning class probability\n",
+    "    return wi, prob\n",
+    "\n",
+    "def predict_proba_NB_2(f, model):\n",
+    "    import numpy as np\n",
+    "    '''\n",
+    "    Naive Bayes model prediction with probability for 2-class classification.\n",
+    "    f is features [Sparse] vector. model is mllib.NaiveBayesModel.\n",
+    "    Output: probability of class 1 (type float).\n",
+    "    '''\n",
+    "    if len(model.theta) != 2:\n",
+    "        print('Model is NOT a 2-class classifier')\n",
+    "        return None\n",
+    "    logp = [f.dot(model.theta[i]) + model.pi[i] for i in range(2)]    \n",
+    "    return 1./(1. + np.exp(logp[0] - logp[1]))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "Py4JJavaError",
+     "evalue": "An error occurred while calling o255.trainLogisticRegressionModelWithSGD.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 16.0 failed 4 times, most recent failure: Lost task 0.3 in stage 16.0 (TID 28, m1-hadoop-wk02t.tcsbank.ru): java.lang.IllegalArgumentException: requirement failed\n\tat scala.Predef$.require(Predef.scala:221)\n\tat org.apache.spark.mllib.optimization.LogisticGradient.compute(Gradient.scala:163)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:230)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:228)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:727)\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.foldLeft(TraversableOnce.scala:144)\n\tat scala.collection.AbstractIterator.foldLeft(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.aggregate(TraversableOnce.scala:201)\n\tat scala.collection.AbstractIterator.aggregate(Iterator.scala:1157)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:66)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1952)\n\tat org.apache.spark.rdd.RDD$$anonfun$reduce$1.apply(RDD.scala:1025)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.reduce(RDD.scala:1007)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1.apply(RDD.scala:1136)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.treeAggregate(RDD.scala:1113)\n\tat org.apache.spark.mllib.optimization.GradientDescent$.runMiniBatchSGD(GradientDescent.scala:227)\n\tat org.apache.spark.mllib.optimization.GradientDescent.optimize(GradientDescent.scala:128)\n\tat org.apache.spark.mllib.regression.GeneralizedLinearAlgorithm.run(GeneralizedLinearAlgorithm.scala:308)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainRegressionModel(PythonMLLibAPI.scala:94)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainLogisticRegressionModelWithSGD(PythonMLLibAPI.scala:263)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: java.lang.IllegalArgumentException: requirement failed\n\tat scala.Predef$.require(Predef.scala:221)\n\tat org.apache.spark.mllib.optimization.LogisticGradient.compute(Gradient.scala:163)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:230)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:228)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:727)\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.foldLeft(TraversableOnce.scala:144)\n\tat scala.collection.AbstractIterator.foldLeft(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.aggregate(TraversableOnce.scala:201)\n\tat scala.collection.AbstractIterator.aggregate(Iterator.scala:1157)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:66)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mPy4JJavaError\u001b[0m                             Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-96-1b96f367425d>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[1;31m#LogisticRegression model\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      2\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 3\u001b[1;33m \u001b[0mmodelLR\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mLogisticRegressionWithSGD\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtrain\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mtrain_data\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m      4\u001b[0m \u001b[0mmodelLR\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mclearThreshold\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/classification.pyc\u001b[0m in \u001b[0;36mtrain\u001b[1;34m(cls, data, iterations, step, miniBatchFraction, initialWeights, regParam, regType, intercept, validateData, convergenceTol)\u001b[0m\n\u001b[0;32m    310\u001b[0m                                  bool(intercept), bool(validateData), float(convergenceTol))\n\u001b[0;32m    311\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 312\u001b[1;33m         \u001b[1;32mreturn\u001b[0m \u001b[0m_regression_train_wrapper\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mtrain\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mLogisticRegressionModel\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mdata\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0minitialWeights\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    313\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    314\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/regression.pyc\u001b[0m in \u001b[0;36m_regression_train_wrapper\u001b[1;34m(train_func, modelClass, data, initial_weights)\u001b[0m\n\u001b[0;32m    209\u001b[0m     \u001b[1;32mif\u001b[0m \u001b[1;33m(\u001b[0m\u001b[0mmodelClass\u001b[0m \u001b[1;33m==\u001b[0m \u001b[0mLogisticRegressionModel\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    210\u001b[0m         weights, intercept, numFeatures, numClasses = train_func(\n\u001b[1;32m--> 211\u001b[1;33m             data, _convert_to_vector(initial_weights))\n\u001b[0m\u001b[0;32m    212\u001b[0m         \u001b[1;32mreturn\u001b[0m \u001b[0mmodelClass\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mweights\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mintercept\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mnumFeatures\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mnumClasses\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    213\u001b[0m     \u001b[1;32melse\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/classification.pyc\u001b[0m in \u001b[0;36mtrain\u001b[1;34m(rdd, i)\u001b[0m\n\u001b[0;32m    308\u001b[0m             return callMLlibFunc(\"trainLogisticRegressionModelWithSGD\", rdd, int(iterations),\n\u001b[0;32m    309\u001b[0m                                  \u001b[0mfloat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mstep\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfloat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mminiBatchFraction\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mi\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfloat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mregParam\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mregType\u001b[0m\u001b[1;33m,\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 310\u001b[1;33m                                  bool(intercept), bool(validateData), float(convergenceTol))\n\u001b[0m\u001b[0;32m    311\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    312\u001b[0m         \u001b[1;32mreturn\u001b[0m \u001b[0m_regression_train_wrapper\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mtrain\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mLogisticRegressionModel\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mdata\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0minitialWeights\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallMLlibFunc\u001b[1;34m(name, *args)\u001b[0m\n\u001b[0;32m    128\u001b[0m     \u001b[0msc\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mSparkContext\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgetOrCreate\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    129\u001b[0m     \u001b[0mapi\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mgetattr\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_jvm\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPythonMLLibAPI\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mname\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 130\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0mcallJavaFunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mapi\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    131\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    132\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallJavaFunc\u001b[1;34m(sc, func, *args)\u001b[0m\n\u001b[0;32m    121\u001b[0m     \u001b[1;34m\"\"\" Call Java Function \"\"\"\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    122\u001b[0m     \u001b[0margs\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0m_py2java\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0ma\u001b[0m \u001b[1;32min\u001b[0m \u001b[0margs\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 123\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0m_java2py\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    124\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    125\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36m__call__\u001b[1;34m(self, *args)\u001b[0m\n\u001b[0;32m    811\u001b[0m         \u001b[0manswer\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgateway_client\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msend_command\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    812\u001b[0m         return_value = get_return_value(\n\u001b[1;32m--> 813\u001b[1;33m             answer, self.gateway_client, self.target_id, self.name)\n\u001b[0m\u001b[0;32m    814\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    815\u001b[0m         \u001b[1;32mfor\u001b[0m \u001b[0mtemp_arg\u001b[0m \u001b[1;32min\u001b[0m \u001b[0mtemp_args\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/sql/utils.pyc\u001b[0m in \u001b[0;36mdeco\u001b[1;34m(*a, **kw)\u001b[0m\n\u001b[0;32m     43\u001b[0m     \u001b[1;32mdef\u001b[0m \u001b[0mdeco\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     44\u001b[0m         \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 45\u001b[1;33m             \u001b[1;32mreturn\u001b[0m \u001b[0mf\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m**\u001b[0m\u001b[0mkw\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     46\u001b[0m         \u001b[1;32mexcept\u001b[0m \u001b[0mpy4j\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mprotocol\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mPy4JJavaError\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     47\u001b[0m             \u001b[0ms\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0me\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mjava_exception\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtoString\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/protocol.py\u001b[0m in \u001b[0;36mget_return_value\u001b[1;34m(answer, gateway_client, target_id, name)\u001b[0m\n\u001b[0;32m    306\u001b[0m                 raise Py4JJavaError(\n\u001b[0;32m    307\u001b[0m                     \u001b[1;34m\"An error occurred while calling {0}{1}{2}.\\n\"\u001b[0m\u001b[1;33m.\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 308\u001b[1;33m                     format(target_id, \".\", name), value)\n\u001b[0m\u001b[0;32m    309\u001b[0m             \u001b[1;32melse\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    310\u001b[0m                 raise Py4JError(\n",
+      "\u001b[1;31mPy4JJavaError\u001b[0m: An error occurred while calling o255.trainLogisticRegressionModelWithSGD.\n: org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 16.0 failed 4 times, most recent failure: Lost task 0.3 in stage 16.0 (TID 28, m1-hadoop-wk02t.tcsbank.ru): java.lang.IllegalArgumentException: requirement failed\n\tat scala.Predef$.require(Predef.scala:221)\n\tat org.apache.spark.mllib.optimization.LogisticGradient.compute(Gradient.scala:163)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:230)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:228)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:727)\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.foldLeft(TraversableOnce.scala:144)\n\tat scala.collection.AbstractIterator.foldLeft(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.aggregate(TraversableOnce.scala:201)\n\tat scala.collection.AbstractIterator.aggregate(Iterator.scala:1157)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:66)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\tat java.lang.Thread.run(Thread.java:745)\n\nDriver stacktrace:\n\tat org.apache.spark.scheduler.DAGScheduler.org$apache$spark$scheduler$DAGScheduler$$failJobAndIndependentStages(DAGScheduler.scala:1431)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1419)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$abortStage$1.apply(DAGScheduler.scala:1418)\n\tat scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)\n\tat scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)\n\tat org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:1418)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGScheduler$$anonfun$handleTaskSetFailed$1.apply(DAGScheduler.scala:799)\n\tat scala.Option.foreach(Option.scala:236)\n\tat org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:799)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:1640)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1599)\n\tat org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:1588)\n\tat org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:48)\n\tat org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:620)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1832)\n\tat org.apache.spark.SparkContext.runJob(SparkContext.scala:1952)\n\tat org.apache.spark.rdd.RDD$$anonfun$reduce$1.apply(RDD.scala:1025)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.reduce(RDD.scala:1007)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1.apply(RDD.scala:1136)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:150)\n\tat org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:111)\n\tat org.apache.spark.rdd.RDD.withScope(RDD.scala:316)\n\tat org.apache.spark.rdd.RDD.treeAggregate(RDD.scala:1113)\n\tat org.apache.spark.mllib.optimization.GradientDescent$.runMiniBatchSGD(GradientDescent.scala:227)\n\tat org.apache.spark.mllib.optimization.GradientDescent.optimize(GradientDescent.scala:128)\n\tat org.apache.spark.mllib.regression.GeneralizedLinearAlgorithm.run(GeneralizedLinearAlgorithm.scala:308)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainRegressionModel(PythonMLLibAPI.scala:94)\n\tat org.apache.spark.mllib.api.python.PythonMLLibAPI.trainLogisticRegressionModelWithSGD(PythonMLLibAPI.scala:263)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:231)\n\tat py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:381)\n\tat py4j.Gateway.invoke(Gateway.java:259)\n\tat py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:133)\n\tat py4j.commands.CallCommand.execute(CallCommand.java:79)\n\tat py4j.GatewayConnection.run(GatewayConnection.java:209)\n\tat java.lang.Thread.run(Thread.java:745)\nCaused by: java.lang.IllegalArgumentException: requirement failed\n\tat scala.Predef$.require(Predef.scala:221)\n\tat org.apache.spark.mllib.optimization.LogisticGradient.compute(Gradient.scala:163)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:230)\n\tat org.apache.spark.mllib.optimization.GradientDescent$$anonfun$1.apply(GradientDescent.scala:228)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.TraversableOnce$$anonfun$foldLeft$1.apply(TraversableOnce.scala:144)\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:727)\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.foldLeft(TraversableOnce.scala:144)\n\tat scala.collection.AbstractIterator.foldLeft(Iterator.scala:1157)\n\tat scala.collection.TraversableOnce$class.aggregate(TraversableOnce.scala:201)\n\tat scala.collection.AbstractIterator.aggregate(Iterator.scala:1157)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$23.apply(RDD.scala:1121)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$treeAggregate$1$$anonfun$24.apply(RDD.scala:1122)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.RDD$$anonfun$mapPartitions$1$$anonfun$apply$20.apply(RDD.scala:710)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:306)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:270)\n\tat org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:66)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:89)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:213)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n\t... 1 more\n"
+     ]
+    }
+   ],
+   "source": [
+    "#LogisticRegression model\n",
+    "\n",
+    "modelLR = LogisticRegressionWithSGD.train(train_data)\n",
+    "modelLR.clearThreshold()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "# 3. Current approach (results only). All calculations in Hive\n",
+    "\n",
+    "ca_res = hc.sql(current_approach_results_query).toPandas()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#Testing result\n",
+    "\n",
+    "df_test = test_data.map( lambda lp: pyspark.sql.Row(\n",
+    "        Label = lp.label,\n",
+    "        NaiveBayes = float(predict_proba_NB_2(lp.features, modelNB)),\n",
+    "        LogisticRegression = float(modelLR.predict(lp.features))\n",
+    "    )).toDF().toPandas()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false,
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "#Build AUCROC metric and print results\n",
+    "\n",
+    "import sklearn\n",
+    "AUCROC = []\n",
+    "for c in df_test.columns:\n",
+    "    if c!= 'Label':\n",
+    "        AUCROC.append([c,sklearn.metrics.roc_auc_score(df_test['Label'],df_test[c])])\n",
+    "for c in [c for c in ca_res.columns if not c in [u'cookie', u'scores_list', u'label']]:\n",
+    "    AUCROC.append(['CurApp_' + c, sklearn.metrics.roc_auc_score(ca_res['label'], ca_res[c])])\n",
+    "for n in [2,3,5,7,10,15,20]:\n",
+    "    AUCROC.append(['CurApp_Top' + str(n), sklearn.metrics.roc_auc_score(\n",
+    "        ca_res['label'], [sum(r[-n:])/max(len(r[-n:]),1) for r in ca_res[u'scores_list'].values]\n",
+    "    )])\n",
+    "        \n",
+    "print('\\nMethods AUCROC performance on test sample ({0:.0f} samples with {1:.0f} positives):\\n\\n'.format(\n",
+    "        df_test.size,df_test['Label'].sum()) +'\\n'.join(['{0:<30}{1:.5f}'.format(k,v) for (k,v) in AUCROC])\n",
+    ")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "print('Time of work {0}'.format(datetime.datetime.now() - start))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

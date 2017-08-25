@@ -1,0 +1,25 @@
+
+create table big_data_science.url_fragment_scores_trig_stream (
+	  `url_fragment` string, 
+	  `coeff` double, 
+	  `load_dttm` timestamp)
+	PARTITIONED BY ( 
+	  `segment_nm` string)
+;
+
+insert overwrite table big_data_science.url_fragment_scores_trig_stream partition (segment_nm)
+select
+  url_fragment,
+  coeff,
+  current_timestamp() as load_dttm,
+  segment_nm
+from dds_dic.max_coeff_url_fragment_score
+where (
+       (segment_nm = 'la_apppr_ccall_2_1' and coeff > -7.2)
+       or (segment_nm = 'la_apppr_ccall_2' and coeff > -6.23)
+       or (segment_nm = 'la_stand_ccall_2' and coeff > -5.45)
+      )
+;
+
+
+       

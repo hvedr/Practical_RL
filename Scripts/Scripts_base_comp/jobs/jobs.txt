@@ -1,0 +1,308 @@
+create table user_kposminin.job_posts as
+select * 
+from
+  prod_raw_liveinternet.access_log a
+where
+  (
+    (url like 'avito.ru%' and url like "%/vakansii%")
+    or url like 'superjob.ru/vakansii%'
+    or url like 'job.ru/%'
+  )
+  and ymd = '2016-03-15'
+;
+
+
+select count(*) as row_cnt,count(distinct id) as id_cnt from user_kposminin.job_posts;
+--	row_cnt	        id_cnt
+--	21'189'258	926'342
+
+
+select 
+  domain,
+  count(distinct id) as id_cnt
+from
+  (select
+     regexp_extract(url,'^([a-z.]*)/', 1) as domain,
+     id
+   from 
+     user_kposminin.job_posts
+  ) a
+group by domain
+;
+
+-- result:
+ 	domain	         id_cnt
+0	avito.ru	671'597
+1	job.ru	         38'486
+2	avito.ru.com	      1
+3	superjob.ru	263'581
+
+
+ 
+select 
+  job,
+  count(distinct id) as job_cnt
+from
+  (select
+     'avito.ru' as site,
+     regexp_extract(url,'^avito.ru/([a-z.]*)/', 1) as region,
+     regexp_extract(url,'^avito.ru/[a-z.]*/vakansii/([a-z.]*)', 1) as job,
+     id
+   from
+     user_kposminin.job_posts
+  ) a
+group by job
+order by job_cnt desc
+;
+
+-- 
+ 	job	job_cnt
+0		835383
+1	prodavets	97159
+2	trebuetsya	95567
+3	voditel	77040
+4	menedzher	72908
+5	trebuyutsya	58007
+6	administrator	53286
+7	bez	50652
+8	operator	46167
+9	transport	43115
+10	stroitelstvo	42140
+11	pomoschnik	35900
+12	proizvodstvo	34459
+13	prodazhi	33125
+14	kurer	30654
+15	gruzchik	29410
+16	spetsialist	28453
+17	avtomobilnyy	26135
+18	ohrana	25304
+19	ohrannik	24650
+20	administrativnaya	22832
+21	torgovyy	22471
+22	raznorabochiy	21422
+23	kladovschik	20538
+24	zhkh	18891
+25	sotrudnik	18669
+26	uborschitsa	18514
+27	master	17541
+28	turizm	16693
+29	buhgalteriya	15800
+30	raznorabochie	15700
+31	buhgalter	15222
+32	rabota	14998
+33	dispetcher	14349
+34	kassir	14175
+35	rabochie	14012
+36	ekspeditor	12778
+37	gruzchiki	12605
+38	povar	12067
+39	komplektovschik	11688
+40	rabotnik	11661
+41	voditeli	11557
+42	montazhnik	11217
+43	fitnes	11203
+44	obrazovanie	10608
+45	it	10584
+46	meditsina	10259
+47	iskusstvo	10235
+48	podrabotka	10197
+49	ohranniki	10173
+50	promouter	10093
+51	sborschik	9733
+52	agent	9704
+53	inzhener	9658
+54	ofis	9382
+55	gossluzhba	9258
+56	ofitsiant	9222
+57	rabochiy	8906
+58	konsultant	8737
+59	upakovschik	8392
+60	upravlyayuschiy	7633
+61	sekretar	7614
+62	merchendayzer	7580
+63	upravlenie	7534
+64	kontroler	7529
+65	sotrudniki	7443
+...
+
+
+
+
+select 
+  job,
+  count(distinct id) as cnt_job
+from
+  (select
+     'job.ru' as site,
+     regexp_extract(url,'^job.ru/([a-z_]*)/', 1) as job,
+     id
+   from
+     user_kposminin.job_posts
+   where url like 'job.ru%'
+  ) a
+group by job
+order by cnt_job desc
+;
+
+
+
+ 	job	cnt_job
+1	seeker	21454
+2	company	4656
+3	sales	3275
+4	employer	2713
+5	construction	2476
+6	production	2133
+7	recruitment	2000
+8	internet	1625
+9	logistics	1404
+10	transportation	1290
+11	confirmation	1035
+12	foods	989
+13	auto	861
+14	error	772
+15	students	636
+16	other	603
+17	medicine	602
+18	office	567
+19	resume	540
+20	sport	535
+21	banks	449
+22	finance	389
+23	guards	384
+24	property	369
+25	art	353
+26	accounting	344
+27	marketing	321
+28	career	254
+29	science	249
+30	house	246
+-------------------------------
+
+
+
+
+select 
+  job,
+  count(distinct id) as cnt_job
+from
+  (select
+     'superjob.ru' as site,
+     regexp_extract(url,'^superjob.ru/vakansii/([a-z]*)', 1) as job,
+     id
+   from
+     user_kposminin.job_posts
+   where url like 'superjob.ru%'
+  ) a
+group by job
+order by cnt_job desc
+;
+
+
+ 	job	cnt_job
+0	menedzher	39070
+1	specialist	21666
+2	voditel	18644
+3	prodavec	18406
+4	inzhener	16450
+5	rukovoditel	16095
+6	buhgalter	13682
+7	operator	13283
+8	glavnyj	13010
+9		12536
+10	nachalnik	12014
+11	administrator	11716
+12	pomoschnik	10958
+13	zamestitel	10729
+14	veduschij	10703
+15	direktor	10547
+16	kladovschik	5852
+17	sekretar	5565
+18	starshij	5553
+19	upravlyayuschij	4782
+20	torgovyj	4592
+21	vrach	4590
+22	ofis	4429
+23	kurer	4382
+24	kassir	4114
+25	gruzchik	3714
+26	regionalnyj	3665
+27	personalnyj	3535
+28	yurist	3435
+...
+
+
+
+create table user_kposminin.jobs_1 as
+select 
+  ymd,
+  id,
+  site,
+  if(
+    job in ('glavnyj','rabota' ,'personalnyj','starshij','zamestitel','pomoschnik'),
+    concat_ws('_',job,next_word),
+    job
+  ) as job
+from
+    (select
+       ymd,
+       'superjob' as site,
+       regexp_extract(url,'^superjob.ru/vakansii/([a-zA-Z]*)', 1) as job,
+       regexp_extract(url,'^superjob.ru/vakansii/[a-zA-Z]*[-_]([a-zA-Z]*)', 1) as next_word,
+       id,
+       url
+     from
+       user_kposminin.job_posts
+     where url like 'superjob.ru%'
+    ) a
+where job <> ''
+
+union all
+
+select 
+  ymd,
+  id,
+  site,
+  job
+from
+  (select
+     ymd,
+     'job' as site,
+     regexp_extract(url,'^job.ru/([a-z_]*)/', 1) as job,
+     id
+   from
+     user_kposminin.job_posts
+   where url like 'job.ru%'
+  ) a
+where 
+  not job in ('career','seeker','company','employer','')
+  
+union all
+
+select 
+  ymd,
+  id,
+  site,
+  if(
+    job in ('it','trebuetsya','trebuyutsya','rabota','menedzher','bez','operator','pomoschnik','proizvodstvo','administrativnaya','avtomobilnyy','spetsialist','podrabotka',
+            'glavnyj','rabota' ,'personalnyj','starshij','zamestitel','pomoschnik','torgovyy'),
+    if(
+      job = in ('trebuetsya','trebuyutsya','rabota'),
+      next_2words,
+      concat_ws('_', job, next_2words)
+    ),
+    job
+  ) as job
+from
+  (select
+     ymd,
+     'avito.ru' as site,
+     regexp_extract(url,'^avito.ru/([a-zA-Z-.]*)/', 1) as region,
+     regexp_extract(url,'^avito.ru/[a-zA-Z-.]*/vakansii/([a-zA-Z]*)', 1) as job,
+     regexp_extract(url,'^avito.ru/[a-zA-Z-.]*/vakansii/[a-zA-Z]*_([a-zA-Z]*(_[a-zA-Z]{3,}){0,1})', 1) as next_2words,
+     id
+   from
+     user_kposminin.job_posts
+  ) a
+where job <> ''
+;

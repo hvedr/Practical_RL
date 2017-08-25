@@ -1,0 +1,397 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "sc.stop()\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import re"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "df1 = pd.DataFrame([r.split('\\t') for r in open('./data/regions_stat.txt','r').read().split('\\n')][1:])\n",
+    "df2 = pd.DataFrame([r.split('\\t') for r in open('./data/regions_UTC.txt','r').read().split('\\n')][:-1]) #pd.read_csv('./data/regions_UTC.txt')\n",
+    "df3 = pd.DataFrame([r.split('\\t') for r in open('./data/regions_salary.txt','r').read().split('\\n')]) #pd.read_csv('./data/regions_UTC.txt')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#df11 = pd.DataFrame([r.split(',') for r in open('./data/regions_extended_stat.csv','r').read().split('\\n')][1:])\n",
+    "#df10 = pd.DataFrame([r.split('\\t') for r in open('./data/phone_codes_regions.txt','r').read().split('\\n')][1:])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "\n",
+    "def nearest_neighbour(a, target_list):\n",
+    "    '''selects nearest string from target_list to string a. Returns index of nearest neighbour. \n",
+    "       a and target_list elements must be in lower case'''\n",
+    "    stat = []\n",
+    "    for n in range(len(a)):\n",
+    "        dist = []\n",
+    "        ngram_a = [a[i:i+n] for i in range(len(a) - n)]\n",
+    "        ngram_list = [[e[i:i+n] for i in range(len(e) - n)] for e in target_list]\n",
+    "        for l in ngram_list:\n",
+    "            inter = len(filter(lambda e: e in ngram_a,l))\n",
+    "            dist.append(float(inter)/(len(ngram_a) + len(l) - inter))\n",
+    "        n_nearest = dist.index(min(dist))        \n",
+    "        k = (sum(dist[:n_nearest] + dist[n_nearest:])/(len(dist)-1) - dist[n_nearest]) / np.std(dist[:n_nearest] + dist[n_nearest:])\n",
+    "        if(k > 2):\n",
+    "            return n_nearest\n",
+    "        stat.append([n_nearest,k])\n",
+    "    k_max = max([e[1] for e in stat])\n",
+    "    for n,k in stat:\n",
+    "        if k == k_max:\n",
+    "            return n\n",
+    "\n",
+    "def nearest_string(a, target_list):\n",
+    "    '''selects nearest string from target_list to string a. Returns index of nearest neighbour. \n",
+    "       a and target_list elements must be in lower case'''\n",
+    "    stat = []\n",
+    "    for n in range(1,len(a)):\n",
+    "        dist = []\n",
+    "        ngram_a = {a[i:i+n] for i in range(len(a) - n)}\n",
+    "        ngram_list = [{e[i:i+n] for i in range(len(e) - n)} for e in target_list]\n",
+    "        for l in ngram_list:            \n",
+    "            dist.append(1 - float(len(ngram_a.intersection(l)))/len(ngram_a.union(l)))\n",
+    "        n_nearest = dist.index(min(dist))        \n",
+    "        k = (sum(dist[:n_nearest] + dist[n_nearest:])/(len(dist)-1) - dist[n_nearest]) / (1e-10 + np.std(dist[:n_nearest] + dist[n_nearest:]))\n",
+    "        if(k > 3):\n",
+    "            return n_nearest\n",
+    "        stat.append([n_nearest,k])\n",
+    "    k_max = max([e[1] for e in stat])    \n",
+    "    for n,k in stat:\n",
+    "        if k == k_max:\n",
+    "            return n\n",
+    "        \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false,
+    "scrolled": false
+   },
+   "outputs": [],
+   "source": [
+    "df4 = pd.concat(\n",
+    "    [df1,\n",
+    "     pd.DataFrame(df1[1].map(lambda v : df2.iloc[nearest_string(v,df2[0].values.tolist())].values.tolist()).values.tolist())\n",
+    "     ,pd.DataFrame(df1[1].map(lambda v : df3.iloc[nearest_string(v,df3[0].values.tolist())].values.tolist()).values.tolist())\n",
+    "    ],axis = 1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "#df12 = pd.concat(\n",
+    "#    [df10,\n",
+    "#     pd.DataFrame(df10[1].map(lambda v : df11.iloc[nearest_string(v,df11[2].values.tolist()[:-1]),1:3].values.tolist()).values.tolist())\n",
+    "#    ],axis = 1)  \n",
+    "#df12.to_csv('./data/tmp1.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "df4.to_csv('./data/tmp.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 198,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "cols_to_take = [0,1,2,3,5,8\t,10,12,13,15]\n",
+    "col_names =  ['index','name','population','pop_country_share','pop_city_share','area_sq_km','federal_district',\n",
+    "              'time_zone','utc_zone','avg_salary_2015_rub']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 246,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/opt/anaconda/lib/python2.7/site-packages/IPython/kernel/__main__.py:13: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy\n"
+     ]
+    }
+   ],
+   "source": [
+    "df5 = df4.iloc[:,cols_to_take]\n",
+    "df5.columns = col_names\n",
+    "for c in ['pop_country_share','pop_city_share']:\n",
+    "    df5.loc[:,c] = df5[c].map(lambda v:float(re.findall('[0-9]+,[0-9]+',v)[0].replace(',','.'))/100)\n",
+    "    \n",
+    "def handle_utc(s):\n",
+    "    a = re.findall('(\\+{0,1}\\-{0,1})([0-9]{1,2}):([0-9]+)',s)\n",
+    "    if a:\n",
+    "        return (1 - 2 * (a[0][0] == '-')) * (int(a[0][1]) + float(a[0][2])/60)\n",
+    "    else:\n",
+    "        return None\n",
+    "    \n",
+    "df5['utc_zone_val'] = df5['utc_zone'].map(handle_utc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 248,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>index</th>\n",
+       "      <th>name</th>\n",
+       "      <th>population</th>\n",
+       "      <th>pop_country_share</th>\n",
+       "      <th>pop_city_share</th>\n",
+       "      <th>area_sq_km</th>\n",
+       "      <th>federal_district</th>\n",
+       "      <th>time_zone</th>\n",
+       "      <th>utc_zone</th>\n",
+       "      <th>avg_salary_2015_rub</th>\n",
+       "      <th>utc_zone_val</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Москва</td>\n",
+       "      <td>12330126</td>\n",
+       "      <td>0.0841</td>\n",
+       "      <td>0.9878</td>\n",
+       "      <td>2511</td>\n",
+       "      <td>ЦФО</td>\n",
+       "      <td>МСК</td>\n",
+       "      <td>UTC+3:00</td>\n",
+       "      <td>59567</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>Московская область</td>\n",
+       "      <td>7318647</td>\n",
+       "      <td>0.0499</td>\n",
+       "      <td>0.8160</td>\n",
+       "      <td>44379</td>\n",
+       "      <td>ЦФО</td>\n",
+       "      <td>МСК</td>\n",
+       "      <td>UTC+3:00</td>\n",
+       "      <td>38396</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>Краснодарский край</td>\n",
+       "      <td>5513804</td>\n",
+       "      <td>0.0376</td>\n",
+       "      <td>0.5432</td>\n",
+       "      <td>75485</td>\n",
+       "      <td>ЮФО</td>\n",
+       "      <td>МСК</td>\n",
+       "      <td>UTC+3:00</td>\n",
+       "      <td>31376</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>Санкт-Петербург</td>\n",
+       "      <td>5225690</td>\n",
+       "      <td>0.0357</td>\n",
+       "      <td>1.0000</td>\n",
+       "      <td>1403</td>\n",
+       "      <td>СЗФО</td>\n",
+       "      <td>МСК</td>\n",
+       "      <td>UTC+3:00</td>\n",
+       "      <td>39845</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>Свердловская область</td>\n",
+       "      <td>4330006</td>\n",
+       "      <td>0.0295</td>\n",
+       "      <td>0.8448</td>\n",
+       "      <td>194307</td>\n",
+       "      <td>УФО</td>\n",
+       "      <td>МСК+2</td>\n",
+       "      <td>UTC+5:00</td>\n",
+       "      <td>34696</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  index                  name population  pop_country_share  pop_city_share  \\\n",
+       "0     1                Москва   12330126             0.0841          0.9878   \n",
+       "1     2    Московская область    7318647             0.0499          0.8160   \n",
+       "2     3    Краснодарский край    5513804             0.0376          0.5432   \n",
+       "3     4       Санкт-Петербург    5225690             0.0357          1.0000   \n",
+       "4     5  Свердловская область    4330006             0.0295          0.8448   \n",
+       "\n",
+       "  area_sq_km federal_district time_zone  utc_zone avg_salary_2015_rub  \\\n",
+       "0       2511              ЦФО       МСК  UTC+3:00               59567   \n",
+       "1      44379              ЦФО       МСК  UTC+3:00               38396   \n",
+       "2      75485              ЮФО       МСК  UTC+3:00               31376   \n",
+       "3       1403             СЗФО       МСК  UTC+3:00               39845   \n",
+       "4     194307              УФО     МСК+2  UTC+5:00               34696   \n",
+       "\n",
+       "   utc_zone_val  \n",
+       "0             3  \n",
+       "1             3  \n",
+       "2             3  \n",
+       "3             3  \n",
+       "4             5  "
+      ]
+     },
+     "execution_count": 248,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df5.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 251,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "DataFrame[]"
+      ]
+     },
+     "execution_count": 251,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sc = SparkContext()\n",
+    "hc = HiveContext(sc)\n",
+    "\n",
+    "df5.to_csv('./data/regions_extended_stat.csv')\n",
+    "hc.sql('drop table if exists regions_temp1')\n",
+    "hc.registerDataFrameAsTable(hc.createDataFrame(df5), 'regions_temp1')\n",
+    "#hc.sql('drop table if exists user_kposminin.delivery_results2')\n",
+    "hc.sql('create table hermes.region_stat as select * from regions_temp1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

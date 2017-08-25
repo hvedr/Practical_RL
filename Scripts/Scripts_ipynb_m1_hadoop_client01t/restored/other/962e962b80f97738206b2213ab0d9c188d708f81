@@ -1,0 +1,332 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import datetime\n",
+    "from pyspark import SparkConf, SparkContext, HiveContext\n",
+    "sc.stop()\n",
+    "conf = SparkConf().set(\"spark.executor.instances\", 32).set(\"spark.driver.maxResultSize\", \"32g\")\n",
+    "sc = SparkContext(conf=conf)\n",
+    "#sc.setCheckpointDir('/user/kposminin/checkpointdir/')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from pyspark.mllib.tree import GradientBoostedTrees, GradientBoostedTreesModel\n",
+    "from pyspark.mllib.util import MLUtils\n",
+    "from pyspark.mllib.regression import LabeledPoint\n",
+    "from pyspark.mllib.evaluation import BinaryClassificationMetrics\n",
+    "import sklearn\n",
+    "import sklearn.ensemble\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "\n",
+    "def repart(filename):\n",
+    "    starttime = datetime.datetime.now()\n",
+    "    sc.textFile(filename).repartition(32*8).saveAsTextFile('.'.join(filename.split('.')[:-1]))\n",
+    "    print('End. Time of work {0}.'.format(datetime.datetime.now() - starttime))\n",
+    "#repart(\"/user/kposminin/la_app_20160817_1.txt\")\n",
+    "#repart(\"/user/kposminin/la_app_20160818_1.txt\")\n",
+    "#repart(\"/user/kposminin/la_app_20160824_1.txt\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "def add_features(table):\n",
+    "    si = 15 #score start index\n",
+    "    def top_avg_score(slist): \n",
+    "        return [sum(slist[:i])/i for i in [2,3,4,5,7,10]]\n",
+    "    return [r + top_avg_score(r[si:si+11]) for r in table] \n",
+    "\n",
+    "def add_feature_rdd(row):\n",
+    "    si = 15 #score start index\n",
+    "    def top_avg_score(slist): \n",
+    "        return [sum(slist[:i])/i for i in [2,3,4,5,7,10]]\n",
+    "    r = row\n",
+    "    return r + top_avg_score(r[si:si+11])\n",
+    "    \n",
+    "    \n",
+    "# Load and parse the data file.\n",
+    "# Load and parse the data file.\n",
+    "train = sc.textFile(\"/user/kposminin/la1_20160817.txt\") \\\n",
+    "  .filter(lambda s: (s[0] == '1') or (hash(s) % 1000 == 0)) \\\n",
+    "  .map(lambda r:r.split('\\t')) \\\n",
+    "  .map(lambda r:[int(e) for e in r]) \\\n",
+    "  .filter(lambda r: len(r) == 30) \\\n",
+    "  .map(add_feature_rdd) \\\n",
+    "  .collect()\n",
+    "\n",
+    "test = sc.textFile(\"/user/kposminin/la1_20160824.txt\") \\\n",
+    "  .filter(lambda s: (s[0] == '1') or (hash(s) % 1000 == 17)) \\\n",
+    "  .map(lambda r:r.split('\\t')) \\\n",
+    "  .map(lambda r:[int(e) for e in r]) \\\n",
+    "  .filter(lambda r: len(r) == 30) \\\n",
+    "  .map(add_feature_rdd) \\\n",
+    "  .collect()\n",
+    "\n",
+    "test_rdd = sc.textFile(\"/user/kposminin/la1_20160824.txt\") \\\n",
+    "  .map(lambda r:r.split('\\t')) \\\n",
+    "  .map(lambda r:[int(e) for e in r]) \\\n",
+    "  .filter(lambda r: len(r) == 30) \\\n",
+    "  .map(add_feature_rdd) \n",
+    "\n",
+    "test_rdd2 = sc.textFile(\"/user/kposminin/la1_20160818.txt\") \\\n",
+    "  .map(lambda r:r.split('\\t')) \\\n",
+    "  .map(lambda r:[int(e) for e in r]) \\\n",
+    "  .filter(lambda r: len(r) == 30) \\\n",
+    "  .map(add_feature_rdd) \n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "test2 = sc.textFile(\"/user/kposminin/la_app_20160818_3.txt\") \\\n",
+    "  .filter(lambda s: (s[0] == '1') or (hash(s) % 100 == 87)) \\\n",
+    "  .map(lambda r:r.split('\\t')) \\\n",
+    "  .map(lambda r:[int(e) for e in r]) \\\n",
+    "  .filter(lambda r: len(r) == 30) \\\n",
+    "  .map(add_feature_rdd) \\\n",
+    "  .collect()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "train1 = [r for r in train if (r[0] == 1) or int(np.random.rand()*20) == 0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "columns = '''smax ,savg ,ssum ,smedian ,sstd ,cntrepeat ,cntuniq \n",
+    ",duration , has_scores, mobile ,emailru ,vkru ,okru ,social_other , s1 ,s2 ,s3 ,s4 ,s5 ,s6 ,s7 ,s8 ,s9 ,s10 , \n",
+    "sm1 ,sm2 ,sm3 ,sm4 ,sm5, avg2, avg3,avg4,avg5,avg7,avg10'''.replace(' ','').replace('\\n','').split(',')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "m1 = sklearn.ensemble.GradientBoostingClassifier(n_estimators=2000, learning_rate=0.03,\n",
+    "       max_depth = 1, random_state=0).fit(X = [e[1:] for e in train1], y = [e[0] for e in train1])\n",
+    "\n",
+    "m2 = sklearn.ensemble.RandomForestClassifier(n_estimators = 1000, criterion='gini', max_depth = 18, \n",
+    "                min_samples_split=20, min_samples_leaf = 20, min_weight_fraction_leaf=0.0, max_features='auto', \n",
+    "                max_leaf_nodes=None, bootstrap=True, oob_score=False, random_state=None, verbose=0, \n",
+    "                warm_start=False, class_weight='auto') \\\n",
+    "    .fit(X = [e[1:] for e in train1], y = [e[0] for e in train1])\n",
+    "    \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import pickle\n",
+    "#m1 = pickle.load(open('la_GBT.pck','r'))\n",
+    "#m2 = pickle.load(open('la_RF.pck','r'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AUCROC on 20160818 sampled test data:\n",
+      "smax 0.904484260643,\n",
+      "GBT  0.857707907824,\n",
+      "RF   0.880331047278.\n"
+     ]
+    }
+   ],
+   "source": [
+    "print('AUCROC on 20160818 sampled test data:\\nsmax {0},\\nGBT  {1},\\nRF   {2}.'.format(\n",
+    "    sklearn.metrics.roc_auc_score(\n",
+    "           y_true = [e[0] for e in test2], \n",
+    "           y_score = [e[columns.index('s1')+1] for e in test2]\n",
+    "    ),\n",
+    "    sklearn.metrics.roc_auc_score(\n",
+    "        y_true = [e[0] for e in test2], \n",
+    "        y_score = [r[1] for r in m1.predict_proba([e[1:] for e in test2])]\n",
+    "    ),\n",
+    "    sklearn.metrics.roc_auc_score(\n",
+    "        y_true = [e[0] for e in test2], \n",
+    "        y_score = [r[1] for r in m2.predict_proba([e[1:] for e in test2])]\n",
+    "    )\n",
+    "))\n",
+    "  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AUC ROC on full test data 20160818. smax: 0.842391097542.\n",
+      "AUC ROC on full test data 20160818.  GBT: 0.835530666116.\n"
+     ]
+    },
+    {
+     "ename": "KeyboardInterrupt",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mKeyboardInterrupt\u001b[0m                         Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-32-0b4e5b4285b6>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m     15\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     16\u001b[0m print('AUC ROC on full test data 20160818.   RF: {0}.'.format(\n\u001b[1;32m---> 17\u001b[1;33m         BinaryClassificationMetrics(test_rdd2.map(lambda r: (\n\u001b[0m\u001b[0;32m     18\u001b[0m         \u001b[0mfloat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mm2\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mpredict_proba\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mr\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m1\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m0\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m1\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     19\u001b[0m         \u001b[0mfloat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mr\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m0\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/evaluation.pyc\u001b[0m in \u001b[0;36mareaUnderROC\u001b[1;34m(self)\u001b[0m\n\u001b[0;32m     60\u001b[0m         \u001b[1;33m(\u001b[0m\u001b[0mROC\u001b[0m\u001b[1;33m)\u001b[0m \u001b[0mcurve\u001b[0m\u001b[1;33m.\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     61\u001b[0m         \"\"\"\n\u001b[1;32m---> 62\u001b[1;33m         \u001b[1;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mcall\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m\"areaUnderROC\"\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     63\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     64\u001b[0m     \u001b[1;33m@\u001b[0m\u001b[0mproperty\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcall\u001b[1;34m(self, name, *a)\u001b[0m\n\u001b[0;32m    144\u001b[0m     \u001b[1;32mdef\u001b[0m \u001b[0mcall\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mname\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    145\u001b[0m         \u001b[1;34m\"\"\"Call method of java_model\"\"\"\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 146\u001b[1;33m         \u001b[1;32mreturn\u001b[0m \u001b[0mcallJavaFunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_sc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mgetattr\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_java_model\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mname\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m,\u001b[0m \u001b[1;33m*\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    147\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    148\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/pyspark/mllib/common.pyc\u001b[0m in \u001b[0;36mcallJavaFunc\u001b[1;34m(sc, func, *args)\u001b[0m\n\u001b[0;32m    121\u001b[0m     \u001b[1;34m\"\"\" Call Java Function \"\"\"\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    122\u001b[0m     \u001b[0margs\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0m_py2java\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0ma\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0ma\u001b[0m \u001b[1;32min\u001b[0m \u001b[0margs\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 123\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0m_java2py\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0msc\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfunc\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m*\u001b[0m\u001b[0margs\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    124\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    125\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36m__call__\u001b[1;34m(self, *args)\u001b[0m\n\u001b[0;32m    809\u001b[0m             \u001b[0mproto\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mEND_COMMAND_PART\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    810\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 811\u001b[1;33m         \u001b[0manswer\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgateway_client\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msend_command\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    812\u001b[0m         return_value = get_return_value(\n\u001b[0;32m    813\u001b[0m             answer, self.gateway_client, self.target_id, self.name)\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36msend_command\u001b[1;34m(self, command, retry)\u001b[0m\n\u001b[0;32m    624\u001b[0m         \u001b[0mconnection\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_get_connection\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    625\u001b[0m         \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 626\u001b[1;33m             \u001b[0mresponse\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mconnection\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msend_command\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    627\u001b[0m             \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_give_back_connection\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mconnection\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    628\u001b[0m         \u001b[1;32mexcept\u001b[0m \u001b[0mPy4JNetworkError\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/apache/spark-1.6.0-bin-hadoop2.6/python/lib/py4j-0.9-src.zip/py4j/java_gateway.py\u001b[0m in \u001b[0;36msend_command\u001b[1;34m(self, command)\u001b[0m\n\u001b[0;32m    738\u001b[0m         \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    739\u001b[0m             \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msocket\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msendall\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcommand\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mencode\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m\"utf-8\"\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 740\u001b[1;33m             \u001b[0manswer\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0msmart_decode\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mstream\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mreadline\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m-\u001b[0m\u001b[1;36m1\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    741\u001b[0m             \u001b[0mlogger\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mdebug\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m\"Answer received: {0}\"\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0manswer\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    742\u001b[0m             \u001b[1;31m# Happens when a the other end is dead. There might be an empty\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/opt/anaconda/lib/python2.7/socket.pyc\u001b[0m in \u001b[0;36mreadline\u001b[1;34m(self, size)\u001b[0m\n\u001b[0;32m    432\u001b[0m                     \u001b[1;32mtry\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    433\u001b[0m                         \u001b[1;32mwhile\u001b[0m \u001b[0mdata\u001b[0m \u001b[1;33m!=\u001b[0m \u001b[1;34m\"\\n\"\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 434\u001b[1;33m                             \u001b[0mdata\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mrecv\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;36m1\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    435\u001b[0m                             \u001b[1;32mif\u001b[0m \u001b[1;32mnot\u001b[0m \u001b[0mdata\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    436\u001b[0m                                 \u001b[1;32mbreak\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mKeyboardInterrupt\u001b[0m: "
+     ]
+    }
+   ],
+   "source": [
+    "from pyspark.mllib.evaluation import BinaryClassificationMetrics\n",
+    "\n",
+    "print('AUC ROC on full test data 20160818. smax: {0}.'.format(\n",
+    "        BinaryClassificationMetrics(test_rdd2.map(lambda r: (\n",
+    "        float(r[1]),\n",
+    "        float(r[0])\n",
+    "       ))).areaUnderROC\n",
+    "))\n",
+    "print('AUC ROC on full test data 20160818.  GBT: {0}.'.format(\n",
+    "        BinaryClassificationMetrics(test_rdd2.map(lambda r: (\n",
+    "        float(m1.predict_proba(r[1:])[0][1]),\n",
+    "        float(r[0])\n",
+    "       ))).areaUnderROC\n",
+    "))\n",
+    "\n",
+    "print('AUC ROC on full test data 20160818.   RF: {0}.'.format(\n",
+    "        BinaryClassificationMetrics(test_rdd2.map(lambda r: (\n",
+    "        float(m2.predict_proba(r[1:])[0][1]),\n",
+    "        float(r[0])\n",
+    "       ))).areaUnderROC\n",
+    "))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "AUC ROC on full test data 20160818.  GBT: 0.884834608035.\n"
+     ]
+    }
+   ],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

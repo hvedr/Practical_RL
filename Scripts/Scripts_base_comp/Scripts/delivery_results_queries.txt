@@ -1,0 +1,29 @@
+select
+    e.ymd,
+    u.uid_str as uid,
+    e.email,
+    e.click,
+    e.open,
+    e.unsubscribe
+from
+    (
+    select distinct
+       to_date(coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm)) as ymd,
+       t.email_address_txt as email,
+       if(t.click_cnt > 0, 1, 0) as click, 
+       if(t.open_flg = 'Y', 1, 0) as open,
+       if(t.unsubscribe_flg  = 'Y', 1, 0) as unsubscribe
+    from prod_dds.target_email t
+    left join user_kposminin.roboemails d on d.email = t.email_address_txt
+    where
+         template_name in ('BULK_RegularPromos_cc_ss','bulk_regularpromos_cc_om1','bulk_regularpromos_cc_om2','bulk_regularpromos_cc_om3','BULK_RegularPromos_cc_ss2',
+                           'bulk_regularpromos_cc_om_h','bulk_regularpromos_cc_dp2','bulk_regularpromos_cc_dp')
+         and not collector_email_flg = 1
+         and not_sent_flg is Null
+         and d.email_address_txt is Null
+         and coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm) > '2016-09-14'
+    ) e
+inner join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'EMAIL') c on c.contact_str = e.email
+inner join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'EMAIL') cl on cl.h_contact_rk = c.h_contact_rk
+inner join prod_dds.h_uid u on u.h_uid_rk = cl.h_uid_rk
+;

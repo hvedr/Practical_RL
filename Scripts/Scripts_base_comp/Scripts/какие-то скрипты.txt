@@ -1,0 +1,640 @@
+drop table if exists user_kposminin.cc_wuid_tst;
+create table user_kposminin.cc_wuid_tst as
+select distinct 
+    dt_created,
+    ymd, 
+    wuid, 
+    (case is_processed when 3 then 1 else 0 end) as completed_flag,
+    0 as revisited
+from prod_dds.portal_application 
+where dt_created >= '2016-09-01' and dt_created < '2016-09-03' 
+and wuid is not null 
+and product_name = 'cc_platinum' 
+and lower(lp) not like '%agent%'
+and is_processed = 3
+and linked_id is Null
+limit 10
+;
+
+insert into user_kposminin.cc_wuid_tst
+select
+    min(dt_created) as dt_created,
+    min(ymd) as ymd,
+    min(
+       named_struct(
+        'dt_created', dt_created,
+        'wuid', wuid
+       )
+    ).wuid as wuid,
+    1 as completed_flag,
+    1 as revisited
+from
+    (
+    select
+        s.id,
+        f.dt_created,
+        f.ymd,
+        f.wuid
+    from (select id, dt_created, ymd,wuid,is_processed,linked_id
+          from prod_dds.portal_application
+          where    is_processed = 3            
+               and product_name = 'cc_platinum' 
+               and not linked_id is Null
+               and dt_created >= '2016-09-01' and dt_created < '2016-09-03' 
+          ) s
+    inner join (select id, dt_created, ymd,wuid,is_processed,linked_id
+          from prod_dds.portal_application
+          where    is_processed = 21 
+               and lower(lp) not like '%agent%'
+               and product_name = 'cc_platinum'            
+               and dt_created >= '2016-09-01'
+          ) f on s.linked_id = f.id
+    ) wd
+group by id
+;
+
+
+drop table if exists user_kposminin.cc_wuid_li_tst;
+create table user_kposminin.cc_wuid_li_tst as
+select
+     a.ymd
+    ,a.dt_created
+    ,a.wuid
+    ,a.completed_flag
+    ,a.revisited
+    ,b.dmp_id
+    ,c.source_id as li_id
+from
+ user_kposminin.cc_wuid_tst a
+ left join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'tcs') b on a.wuid = b.source_id
+ left join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'liveinternet') c on b.dmp_id = c.dmp_id
+;
+
+
+drop table if exists user_kposminin.cc_wuid_li_unique_tst;
+create table user_kposminin.cc_wuid_li_unique_tst as
+select 
+  a.ymd
+ ,a.li_id
+ ,max(a.dt_created) as dt_created
+ ,min(a.revisited) as revisited
+ ,max(a.completed_flag) as completed_flag 
+from 
+ user_kposminin.cc_wuid_li_tst a
+ inner join 
+(
+select
+ wuid
+ ,count(distinct li_id) li_cnt
+from
+ user_kposminin.cc_wuid_li_tst
+group by
+ wuid
+having
+ li_cnt = 1
+) t on a.wuid = t.wuid
+where not li_id is NULL
+group by a.ymd, a.li_id
+;
+
+(url LIKE '%sravni.ru/kredity%') OR (url LIKE '%sravni.ru/zaimy%') OR (url LIKE '%sravni.ru/kreditnyj-skoring%')
+
+
+
+select
+        ymd,
+        up,
+        (100 * max(smax)) as score1,
+        (100 * log((sum(1/(1+exp(-smax))) + 0.1) / (count() - sum(1/(1+exp(-smax))) + 0.1))) as score2,
+        (100 * log((sum(scoreNB) + 0.1) / (count() - sum(scoreNB) + 0.1))) as score3,
+        (100 * log(max(scoreNB))) as score4,
+        toUInt32(count()) as total,
+        sum(scoreNB),
+        max(scoreNB),
+        max(ssum)
+    from
+        (select ymd, uid, up from kosm.id_up_20160817 where up like '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%')
+        any left join (select uid, smax * 1. / 100000 as smax,has_scores, ssum*1./100000 as ssum, if(has_scores>0,exp(ssum*1./100000)/has_scores,exp(-11)) as scoreNB 
+             from kosm.id_20160817 where uid in (select uid from kosm.id_up_20160817 where cityHash64(up) % 256 = 0)) using uid
+    where not up like 'tinkoff.ru'
+    group by ymd, up
+    having total > 500
+
+    ;
+
+
+(select uid, smax * 1. / 100000 as smax,has_scores, if(has_scores>0,exp(ssum*1./100000)/has_scores,exp(-11)) as scoreNB 
+             from kosm.id_20160817 where uid in (select uid from kosm.id_up_20160817 where up like '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'))
+
+
+
+SELECT
+    ymd,    
+    smax,
+    has_scores,
+    scoreNB, 
+    ssum
+FROM
+(
+    SELECT
+        ymd,
+        uid,
+        up
+    FROM kosm.id_up_20160817
+    WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+) ANY LEFT JOIN
+(
+    SELECT
+        uid,
+        (smax * 1.) / 100000 AS smax,
+        (ssum * 1.) / 100000 as ssum,
+        has_scores,
+        if(has_scores > 0, exp((ssum * 1.) / 100000) / has_scores, exp(-11)) AS scoreNB
+    FROM kosm.id_20160817
+    WHERE uid IN
+    (
+        SELECT uid
+        FROM kosm.id_up_20160817
+        WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+    )
+) USING uid
+WHERE NOT (up LIKE 'tinkoff.ru')
+
+order by scoreNB desc
+
+limit 20
+;
+
+
+
+SELECT
+    ymd,
+    up,
+    100 * max(smax) AS score1,
+    100 * log((sum(1 / (1 + exp(-smax))) + 0.1) / ((count() - sum(1 / (1 + exp(-smax)))) + 0.1)) AS score2,
+    100 * log((sum(scoreNB) + 0.1) / ((count() - sum(scoreNB)) + 0.1)) AS score3,
+    100 * log(max(scoreNB)) AS score4,
+    toUInt32(count()) AS total,
+    sum(scoreNB),
+    max(scoreNB)
+FROM
+(
+    SELECT
+        ymd,
+        uid,
+        up
+    FROM kosm.id_up_20160817
+    WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+) ANY LEFT JOIN
+(
+    SELECT
+        uid,
+        (smax * 1.) / 100000 AS smax,
+        has_scores,
+        if(has_scores > 0, exp((ssum * 1.) / 100000) / has_scores, exp(-11)) AS scoreNB
+    FROM kosm.id_20160817
+    WHERE uid IN
+    (
+        SELECT uid
+        FROM kosm.id_up_20160817
+        WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+    )
+) USING uid
+WHERE NOT (up LIKE 'tinkoff.ru')
+GROUP BY
+    ymd,
+    up
+;
+
+SELECT
+uid,
+scoreNB,
+smax,
+ssssum,
+has_scores
+
+FROM
+(
+    SELECT
+        ymd,
+        uid,
+        up
+    FROM kosm.id_up_20160817
+    WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+) ANY LEFT JOIN
+(
+    SELECT
+        uid,
+        (smax * 1.) / 100000 AS smax,  (ssum * 1.) / 100000 as ssssum,
+        has_scores,
+        if(has_scores > 0, exp((ssum * 1.) / 100000) / has_scores, exp(-11)) AS scoreNB
+    FROM kosm.id_20160817
+    WHERE uid IN
+    (
+        SELECT uid
+        FROM kosm.id_up_20160817
+        WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+    )
+) USING uid
+WHERE NOT (up LIKE 'tinkoff.ru')
+order by scoreNB desc
+limit 20;
+
+
+
+SELECT
+count(),
+max(scoreNB),
+sum(scoreNB),
+max(smax)
+
+
+FROM
+(
+    SELECT
+        ymd,
+        uid,
+        up
+    FROM kosm.id_up_20160817
+    WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+) ANY LEFT JOIN
+(
+    SELECT
+        uid,
+        (smax * 1.) / 100000 AS smax, 1 as sss
+        has_scores,
+        if(has_scores > 0, exp((ssum * 1.) / 100000) / has_scores, exp(-11)) AS scoreNB
+    FROM kosm.id_20160817
+    WHERE uid IN
+    (
+        SELECT uid
+        FROM kosm.id_up_20160817
+        WHERE up LIKE '1plus1tv.ru[2]18615-zhenskaya-dolya-kumkum%'
+    )
+) USING uid
+WHERE NOT (up LIKE 'tinkoff.ru')
+GROUP BY
+    ymd,
+    up
+;
+
+
+CREATE TABLE kosm.up_20160817_1
+       (ymd Date, up String, total UInt32, positive UInt16, score Int32)
+    ENGINE = MergeTree(ymd, (up, ymd), 8192);
+insert into kosm.up_20160817_1
+select ymd, up, total, positive, score from kosm.up_20160817;
+
+
+
+
+
+create table prod_features_liveinternet.urlfr_scores
+(urlfr string, positive Bigint, total Bigint, score DOUBLE)
+partitioned by(ymd string, target string)
+stored as sequencefile;
+
+WITH t AS (
+  SELECT v.urlfr AS urlfr, COUNT(*) AS cnt_positive
+  FROM prod_features_liveinternet.visits v
+  WHERE v.ymd='%s' AND v.id in
+    (SELECT a.id FROM prod_features_liveinternet.tinkoff_actions a WHERE
+     a.ymd='%s' and a.action_type = '%s')
+  GROUP BY v.urlfr
+)
+INSERT OVERWRITE TABLE  prod_features_liveinternet.urlfr_scores
+PARTITION (ymd, target)
+SELECT s.urlfr AS urlfr, s.visitors as cnt_total, nvl(t.cnt_positive, 0) as cnt_positive
+FROM prod_features_liveinternet.urlfr_stat s
+LEFT OUTER JOIN t ON t.urlfr = s.urlfr
+WHERE s.ymd='%s';
+
+create table kosm.upr1_20160817_1 
+    (ymd Date, up String, score1 Int32, score2 Int32, score3 Int32, score4 Int32,  
+       score5 Int32, score6 Int32, score7 Int32, score8 Int32, total UInt32)
+    ENGINE = MergeTree(ymd, (up, ymd), 8192);
+
+
+
+********************************************************************************
+
+
+
+drop table if exists user_kposminin.deliv_results;
+create table user_kposminin.deliv_results as 
+select
+    e.ymd as deliv_ymd,
+    cl.h_uid_rk,
+    e.email,
+    e.click,
+    e.open,
+    if(pa.utm_term is Null,0,1) as app_start,
+    if(pa.is_processed = 3,1,0) as app_compl,
+    e.unsubscribe,
+    if(u.h_uid_rk is Null,0,1) as lam,
+    u.score, 
+    u.load_dttm, 
+    u.segment_nm, 
+    u.ymd as model_date
+from    
+    (select distinct
+       to_date(coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm)) as ymd,
+       t.email_address_txt as email,
+       if(t.click_cnt > 0, 1, 0) as click, 
+       if(t.open_flg = 'Y', 1, 0) as open,
+       if(t.unsubscribe_flg  = 'Y', 1, 0) as unsubscribe
+    from prod_dds.target_email t
+    left join user_kposminin.roboemails d on d.email = t.email_address_txt
+    where
+         template_name in ('BULK_RegularPromos_cc_ss','bulk_regularpromos_cc_om1','bulk_regularpromos_cc_om2','bulk_regularpromos_cc_om3','BULK_RegularPromos_cc_ss2',
+                           'bulk_regularpromos_cc_om_h','bulk_regularpromos_cc_dp2','bulk_regularpromos_cc_dp','Bulk_cc_ss_dd', 'bulk_regularpromos_cc_ret','bulk_regularpromos_cc_ret2',
+                          'BULK_RegularPromos_cc_ss_')
+         and not collector_email_flg = 1
+         and not_sent_flg is Null
+         and d.email is Null
+         and coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm) > '2016-08-28'
+    ) e
+    left join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'EMAIL') c on c.contact_str = e.email
+    left join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'EMAIL') cl on cl.h_contact_rk = c.h_contact_rk
+    left join prod_lookalike.user_x_segment u on cl.h_uid_rk = u.h_uid_rk    
+    left join prod_dds.portal_application pa on cl.h_uid_rk = pa.utm_term
+;
+
+
+select huidcnt,cnt,count(email) as emailcnt from 
+(select email,deliv_ymd,count(*) as cnt, count(distinct h_uid_rk) as huidcnt from user_kposminin.deliv_results group by email,deliv_ymd) a
+group by  huidcnt,cnt 
+order by huidcnt,cnt ;
+
+drop table if exists user_kposminin.deliv_results_pos_unique;
+create table user_kposminin.deliv_results_pos_unique as
+select
+   deliv_ymd,
+   h_uid_rk,
+   email,
+   lam,
+   max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'open', open
+     )
+   ).open as open,
+    max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'click', click
+     )
+   ).click as click,
+   max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'unsubscribe', unsubscribe
+     )
+   ).unsubscribe as unsubscribe,
+   max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'score', score
+     )
+   ).score as score,
+   max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'load_dttm', load_dttm
+     )
+   ).load_dttm as load_dttm,
+   max(
+     named_struct(
+       'deliv_ymd', deliv_ymd,
+       'model_date', model_date
+     )
+   ).model_date as model_date
+from user_kposminin.deliv_results 
+where deliv_ymd >= load_dttm
+group by deliv_ymd, h_uid_rk, email,lam
+;
+
+
+
+************************************************************************************
+
+
+
+drop table if exists user_kposminin.deliv_results_5;
+create table user_kposminin.deliv_results_5 as
+select 
+    a.deliv_ymd, 
+    array(a.h_uid_rk) as h_uid_rk_arr,
+    a.email,
+    max(a.lam) as lam,
+    max(a.open) as open,
+    max(a.click) as click,
+    max(a.unsubscribe) as unsubscribe,
+    max(a.score) as score,
+    max(a.load_dttm) as load_dttm,
+    max(a.model_date) as model_date,
+    max(if(b.utm_term is Null,0,1)) as app_start,
+    max(if(b.is_processed = 3,1,0)) as app_compl 
+from user_kposminin.deliv_results_pos_unique a
+left join prod_dds.portal_application b on a.h_uid_rk = b.utm_term
+group by a.deliv_ymd, a.email;
+
+
+
+create table user_kposminin.deliv_results_6 as
+select 
+    a.deliv_ymd, 
+    a.email,
+    max(a.lam) as lam,
+    max(a.open) as open,
+    max(a.click) as click,
+    max(a.unsubscribe) as unsubscribe,
+    max(a.score) as score,
+    max(a.load_dttm) as load_dttm,
+    max(a.model_date) as model_date,
+    max(app_start) as app_start,
+    max(app_compl) as app_compl,
+    count(distinct h_uid_rk) as huid_cnt
+from user_kposminin.deliv_results_5 a
+group by a.deliv_ymd, a.email;
+
+
+
+select count(email) as total, count(distinct email) as email_cnt, sum(open) as open, sum(click) as click, sum(app_start),sum(app_compl) from deliv_results_6;
+
+
+-- select cnt,count(email) as c from (select email, count(distinct h_uid_rk) as cnt from deliv_results_5 group by email) a group by cnt order by c desc;
+
+with 
+score_label as
+(select score, app_compl as label from deliv_results_6),
+cs as (select (1-label)*sum(label) OVER (ORDER BY score DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as sl  from score_label)
+select sum(sl)*1.0/((count(*)-max(sl))*max(sl)) as auc_roc from cs;
+
+
+select
+   p.deliv_ymd,
+   p.open_rate as por, n.open_rate as nor,
+   p.click_rate as pcr, n.click_rate as ncr,
+   p.unsubscr as pu, n.unsubscr as nu,
+   p.cnt as pcnt, n.cnt as ncnt
+from
+    (select deliv_ymd, avg(click) as click_rate,avg(open) as open_rate,avg(unsubscribe) as unsubscr,count(*) as cnt from user_kposminin.deliv_results_6 group by deliv_ymd) p 
+    left join (select deliv_ymd, avg(click) as click_rate,avg(open) as open_rate,avg(unsubscribe) as unsubscr,count(*) as cnt from user_kposminin.deliv_results where lam = 0 group by deliv_ymd) n 
+    on p.deliv_ymd = n.deliv_ymd;
+
+
+
+
+    
+***********************************************************************
+
+drop table if exists user_kposminin.deliv_results_per_huid;
+create table user_kposminin.deliv_results_per_huid as 
+select
+    e.ymd as deliv_ymd,
+    cl.h_uid_rk,
+    e.email,
+    e.click,
+    e.open,
+    e.unsubscribe,
+    if(u.h_uid_rk is Null,0,1) as lam,
+    u.score, 
+    u.load_dttm, 
+    u.segment_nm, 
+    u.ymd as model_date  
+from    
+    (select distinct
+       to_date(coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm)) as ymd,
+       t.email_address_txt as email,
+       if(t.click_cnt > 0, 1, 0) as click, 
+       if(t.open_flg = 'Y', 1, 0) as open,
+       if(t.unsubscribe_flg  = 'Y', 1, 0) as unsubscribe
+    from prod_dds.target_email t
+    left join user_kposminin.roboemails d on d.email = t.email_address_txt
+    where
+         template_name in ('BULK_RegularPromos_cc_ss','bulk_regularpromos_cc_om1','bulk_regularpromos_cc_om2','bulk_regularpromos_cc_om3','BULK_RegularPromos_cc_ss2',
+                           'bulk_regularpromos_cc_om_h','bulk_regularpromos_cc_dp2','bulk_regularpromos_cc_dp')
+         and not collector_email_flg = 1
+         and not_sent_flg is Null
+         and d.email is Null
+         and coalesce(t.send_to_customer_dttm, t.send_to_exact_dttm, t.export_dttm) > '2016-08-28'
+    ) e
+    left join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'EMAIL') c on c.contact_str = e.email
+    left join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'EMAIL') cl on cl.h_contact_rk = c.h_contact_rk
+    left join prod_lookalike.user_x_segment u on cl.h_uid_rk = u.h_uid_rk    
+;
+
+
+
+drop table if exists  user_kposminin.deliv_results_per_email;
+create table user_kposminin.deliv_results_per_email as
+select
+   deliv_ymd,
+   email,
+   max(lam) as lam,
+   max(open) as open,
+   max(click) as click,
+   max(app_start) as app_start,
+   max(app_compl) as app_compl,
+   max(unsubscribe) as unsubscribe,
+   max(
+     named_struct(
+       'lam', lam,
+       'score', score
+     )
+    ).score as score,
+   max(
+     named_struct(
+       'lam', lam,
+       'load_dttm', load_dttm
+     )
+    ).load_dttm as load_dttm,
+   max(
+     named_struct(
+       'lam', lam,
+       'model_date', model_date
+     )
+    ).model_date as model_date,
+   max(
+     named_struct(
+       'lam', lam,
+       'segment_nm', segment_nm
+     )
+    ).segment_nm as segment_nm,
+   count(distinct h_uid_rk) as huid_cnt,
+   count(distinct lam) as lam_cnt
+from user_kposminin.deliv_results_per_huid
+where deliv_ymd >= nvl(load_dttm,cast(1 as timestamp))
+group by deliv_ymd, email
+;
+
+
+select 
+    'delivery_results per email' as title,
+    sum((1-lam)*open)/(count(*) - sum(lam)) as n_open, sum(lam * open) / sum(lam) as p_open,
+    sum((1-lam)*click)/(count(*) - sum(lam)) as n_click, sum(lam*click)/sum(lam) as p_click,
+    sum((1-lam)*app_start)/(count(*) - sum(lam)) as n_app_start, sum(lam*app_start)/sum(lam) as p_app_start,
+    sum((1-lam) * app_compl)/(count(*) - sum(lam)) as n_app_compl, sum(lam * app_compl)/sum(lam) as p_app_compl,
+    sum((1-lam) * unsubscribe)/(count(*) - sum(lam)) as n_unsub, sum(lam * unsubscribe)/sum(lam) as p_unsub,
+    count(*) - sum(lam) as n_count,
+    sum(lam) as p_count
+from user_kposminin.deliv_results_per_email
+union all
+select 
+    'delivery_results per huid' as title,
+    sum((1-lam)*open)/(count(*) - sum(lam)) as n_open, sum(lam * open) / sum(lam) as p_open,
+    sum((1-lam)*click)/(count(*) - sum(lam)) as n_click, sum(lam*click)/sum(lam) as p_click,
+    sum((1-lam)*app_start)/(count(*) - sum(lam)) as n_app_start, sum(lam*app_start)/sum(lam) as p_app_start,
+    sum((1-lam) * app_compl)/(count(*) - sum(lam)) as n_app_compl, sum(lam * app_compl)/sum(lam) as p_app_compl,
+    sum((1-lam) * unsubscribe)/(count(*) - sum(lam)) as n_unsub, sum(lam * unsubscribe)/sum(lam) as p_unsub,
+    count(*) - sum(lam) as n_count,
+    sum(lam) as p_count
+from user_kposminin.deliv_results_per_huid
+;
+
+
+create table user_kposminin.delivery_huid_20161004 as
+
+select
+ 
+  a.ymd,
+
+   a.h_uid_rk,
+
+   a.segment_nm,
+
+   1/(exp(-a.score)+1) * nvl(b.score,1) * nvl(c.score,0) as probability,
+
+   a.score as init_score
+
+from 
+(select h_uid_rk,ymd, segment_nm,score from prod_lookalike.user_x_segment where ymd > '2016-09-14') a
+
+left join user_kposminin.segment_score b on b.segment_nm = a.segment_nm
+
+left join user_kposminin.days_score c on c.lag = datediff('2016-10-04',a.ymd)
+;
+
+
+create table user_kposminin.random_emails_huid as 
+select a.*,b.h_uid_rk from
+user_kposminin.random_emails_uniq a
+inner join (select uid_str, h_uid_rk from prod_dds.h_uid where load_src = 'LI.02') b on b.uid_str = a.id;
+
+
+insert into user_kposminin.delivery_huid_20161004
+select distinct
+    a.ymd,
+    a.h_uid_rk,
+    'random' as segment_nm,
+    greatest(exp(2.4*rand()-3.8),0.02) as probability,
+    0.5 as init_score
+from user_kposminin.random_emails_huid a limit 100000;
+
+create table user_kposminin.delivery_huid_20161004_10m as 
+select h_uid_rk, max(probability) from user_kposminin.delivery_huid_20161004 where probability > 0.0005 group by h_uid_rk;
+
+
+
+

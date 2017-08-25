@@ -1,0 +1,199 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "#Config\n",
+    "from pyspark import SparkConf, SparkContext, HiveContext\n",
+    "import re\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import datetime\n",
+    "import pyhs2\n",
+    "import sklearn\n",
+    "sc.stop()\n",
+    "conf = SparkConf().set(\"spark.executor.instances\", 32).set(\"spark.driver.maxResultSize\", \"16g\")\n",
+    "sc = SparkContext(conf=conf)\n",
+    "hc = HiveContext(sc)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from pyhive import hive\n",
+    "HIVE_HOST = 'm1-hadoop-cs01t'     \n",
+    "HIVE_PORT = 10000\n",
+    "HIVE_USER = 'kposminin'\n",
+    "CONF={'hive.vectorized.execution.enabled':'true'\n",
+    "    ,'mapreduce.map.memory.mb':'4096'\n",
+    "    ,'mapreduce.map.child.java.opts':'-Xmx4g'\n",
+    "    ,'mapreduce.task.io.sort.mb':'1024'\n",
+    "    ,'mapreduce.reduce.child.java.opts':'-Xmx4g'\n",
+    "    ,'mapreduce.reduce.memory.mb':'7000'\n",
+    "    ,'mapreduce.reduce.shuffle.input.buffer.percent':'0.5'\n",
+    "    ,'mapreduce.input.fileinputformat.split.minsize':'536870912'\n",
+    "    ,'mapreduce.input.fileinputformat.split.maxsize':'1073741824'\n",
+    "    ,'hive.optimize.ppd':'true'\n",
+    "    ,'hive.merge.smallfiles.avgsize':'536870912'\n",
+    "    ,'hive.merge.mapredfiles':'true'\n",
+    "    ,'hive.merge.mapfiles':'true'\n",
+    "    ,'hive.hadoop.supports.splittable.combineinputformat':'true'\n",
+    "    ,'hive.exec.reducers.bytes.per.reducer':'536870912'\n",
+    "    ,'hive.exec.parallel':'true'\n",
+    "    ,'hive.exec.max.created.files':'10000000'\n",
+    "    ,'hive.exec.compress.output':'true'\n",
+    "    ,'hive.exec.dynamic.partition.mode':'nonstrict'\n",
+    "    ,'hive.exec.max.dynamic.partitions':'1000000'\n",
+    "    ,'hive.exec.max.dynamic.partitions.pernode':'100000'\n",
+    "    ,'io.seqfile.compression.type':'BLOCK'}\n",
+    "conn = hive.Connection(host=HIVE_HOST, port=HIVE_PORT, username=HIVE_USER, configuration=CONF)\n",
+    "cur = conn.cursor()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "calc_id = 25 \n",
+    "\n",
+    "train_labeledpoint_query = '''\n",
+    "select\n",
+    "    *\n",
+    "from \n",
+    "    user_kposminin.user_param_train{calc_id}\n",
+    "'''.format(calc_id = calc_id)\n",
+    "\n",
+    "test_labeledpoint_query = '''\n",
+    "select\n",
+    "    *\n",
+    "from \n",
+    "    user_kposminin.user_param_test{calc_id}\n",
+    "'''.format(calc_id = calc_id)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Area under PR = 0.00277950888364\n",
+      "Area under ROC = 0.777539122319\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numbers\n",
+    "from pyspark.mllib.evaluation import BinaryClassificationMetrics\n",
+    "\n",
+    "test_data = hc.sql(test_labeledpoint_query) \\\n",
+    "    .map(lambda r: (r['max_score'],r['label'])) \\\n",
+    "    .filter(lambda r: all(isinstance(e,numbers.Number) for e in r)) \\\n",
+    "    .map(lambda (s,l): (float(s),float(l)))\n",
+    "\n",
+    "# Compute raw scores on the test set\n",
+    "#predictionAndLabels = test.map(lambda lp: (float(model.predict(lp.features)), lp.label))\n",
+    "\n",
+    "# Instantiate metrics object\n",
+    "metrics = BinaryClassificationMetrics(test_data)\n",
+    "\n",
+    "# Area under precision-recall curve\n",
+    "print(\"Area under PR = %s\" % metrics.areaUnderPR)\n",
+    "\n",
+    "# Area under ROC curve\n",
+    "print(\"Area under ROC = %s\" % metrics.areaUnderROC)\n",
+    "\n",
+    "    \n",
+    "#print(sklearn.metrics.roc_auc_score([e[0] for e in test_data],[e[1] for e in test_data]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "# print(sklearn.metrics.roc_auc_score([e[0] for e in test_data],[e[1] for e in test_data]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

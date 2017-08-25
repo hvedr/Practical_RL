@@ -1,0 +1,90 @@
+Оптимизация Hive:
+В Hive:
+
+set hive.vectorized.execution.enabled=true;
+set mapreduce.map.memory.mb=4096;
+set mapreduce.map.child.java.opts=-Xmx4g;
+set mapreduce.task.io.sort.mb=1024;
+set mapreduce.reduce.child.java.opts=-Xmx4g;
+set mapreduce.reduce.memory.mb=7000;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.5;
+set mapreduce.input.fileinputformat.split.minsize=536870912;
+set mapreduce.input.fileinputformat.split.maxsize=1073741824;
+set hive.optimize.ppd=true;
+set hive.merge.smallfiles.avgsize=536870912;
+set hive.merge.mapredfiles=true;
+set hive.merge.mapfiles=true;
+set hive.hadoop.supports.splittable.combineinputformat=true;
+set hive.exec.reducers.bytes.per.reducer=536870912;
+set hive.exec.parallel=true;
+set hive.exec.max.created.files=10000000;
+set hive.exec.compress.output=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+set hive.exec.max.dynamic.partitions=1000000;
+set hive.exec.max.dynamic.partitions.pernode=100000;
+set io.seqfile.compression.type=BLOCK;
+set mapred.output.compression.codec=org.apache.hadoop.io.compress.BZip2Codec;
+set mapreduce.map.failures.maxpercent=5;
+
+set hive.tez.auto.reducer.parallelism=true;
+set hive.tez.min.partition.factor=0.25;
+set hive.tez.max.partition.factor=2.0;
+set tez.runtime.pipelined.sorter.lazy-allocate.memory=true;
+
+если тяжело идет запрос,то менять значения 
+set mapreduce.input.fileinputformat.split.minsize=536870912;
+set mapreduce.input.fileinputformat.split.maxsize=1073741824;
+set hive.exec.reducers.bytes.per.reducer=268435456;
+
+-- если много промежуточных результатов
+mapreduce.map.output.compress=true;
+
+mapreduce.map.output.compress.codec=org.apache.hadoop.io.compress.SnappyCodec;
+
+
+-- тяжелые запросы set mapred.job.queue.name=bigdata_long;
+
+
+в ipython notebook:
+from pyhive import hive
+HIVE_HOST = 'm1-hadoop-cs01t'     
+HIVE_PORT = 10000
+HIVE_USER = 'kposminin'
+CONF={'hive.vectorized.execution.enabled':'true'
+    ,'mapreduce.map.memory.mb':'4096'
+    ,'mapreduce.map.child.java.opts':'-Xmx4g'
+    ,'mapreduce.task.io.sort.mb':'1024'
+    ,'mapreduce.reduce.child.java.opts':'-Xmx4g'
+    ,'mapreduce.reduce.memory.mb':'7000'
+    ,'mapreduce.reduce.shuffle.input.buffer.percent':'0.5'
+    ,'mapreduce.input.fileinputformat.split.minsize':'536870912'
+    ,'mapreduce.input.fileinputformat.split.maxsize':'1073741824'
+    ,'hive.optimize.ppd':'true'
+    ,'hive.merge.smallfiles.avgsize':'536870912'
+    ,'hive.merge.mapredfiles':'true'
+    ,'hive.merge.mapfiles':'true'
+    ,'hive.hadoop.supports.splittable.combineinputformat':'true'
+    ,'hive.exec.reducers.bytes.per.reducer':'536870912'
+    ,'hive.exec.parallel':'true'
+    ,'hive.exec.max.created.files':'10000000'
+    ,'hive.exec.compress.output':'true'
+    ,'hive.exec.dynamic.partition.mode':'nonstrict'
+    ,'hive.exec.max.dynamic.partitions':'1000000'
+    ,'hive.exec.max.dynamic.partitions.pernode':'100000'
+    ,'io.seqfile.compression.type':'BLOCK'}
+conn = hive.Connection(host=HIVE_HOST, port=HIVE_PORT, username=HIVE_USER, configuration=CONF)
+cur = conn.cursor()
+
+--------------------------------------------------------------
+
+
+Оптимизация Spark:
+
+в файле /home/k.p.osminin/.ipython/profile_spark/startup/00-pyspark-setup.py:
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--master yarn --deploy-mode client --driver-memory 16g --num-executors 16 --executor-memory 25g --executor-cores 1 --conf spark.yarn.executor.memoryOverhead=2048 --conf spark.driver.maxResultSize=16g --conf spark.yarn.queue=kposminin pyspark-shell'
+
+в ipython notebook:
+from pyspark import SparkConf, SparkContext, HiveContext
+sc.stop()
+conf = SparkConf().set("spark.executor.instances", 32).set("spark.driver.maxResultSize", "16g")
+sc = SparkContext(conf=conf)

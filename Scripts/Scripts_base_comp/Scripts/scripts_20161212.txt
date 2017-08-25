@@ -1,0 +1,544 @@
+
+select distinct ymd from la_stand_ccall_20161211;
+
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+insert overwrite
+ table prod_features_liveinternet.visits_r partition(ymd)    
+select id
+     , urlfr
+     , min(named_struct( 't', if((split(urlfr,'#')[0] <> ref_host) and not ref_host in ('','-','B'), time, time + 10000000)
+     , 'ref_host', ref_host)).ref_host as ref_host
+     , cast(count(*) as int) hits
+     , cast(sum(hits_old) as int) hits_old
+     , cast(count(distinct url) as int) as page_cnt
+     , cast(MAX(time) - MIN(time) as int) as duration
+     , AVG(time) as avg_time
+     , stddev(time) as time_std
+     , max(email_visit_flag) as email_visit
+     , max(email_ru_flag) as emailru
+     , max(utm_flag) as utm
+     , max(if(regexp_extract(ref_host,'(.*)\\.[a-zA-Z]*$',1) in ('google','google.co','google.com','yandex','go.mail','nova.rambler','bing','yahoo'),1, 0)) as ref_search
+     , max(if(regexp_extract(ref_host,'([^.]*)\\.[a-zA-Z]*$',1) in ('vk','facebook','ok','odnoklassniki','instagram','youtube'),1, 0)) as ref_social
+     , max(ip) as ip
+     , count(distinct ip) as ip_cnt
+     , max(current_timestamp()) as load_dttm
+     , ymd
+  from(select id
+            , time
+            , concat(parse_url(concat('http://', url), 'HOST'), '#', path_fr) as urlfr
+            , ymd
+            , if(lower(concat(url,' ',referrer)) rlike '[^a-z](utm[_-]?[a-z]{0,15}|from|source|src(id)?)[%a-f0-9]{0,4}[=-_]?e?mail',1, 0) as email_visit_flag
+            , if(lower(referrer) rlike 'e\\.mail\\.ru',1, 0) as email_ru_flag
+            , if(lower(concat(url,' ',referrer)) rlike '([^a-zA-Z]utm(_|-|=|%[0-9][0-9a-fA-F]))|/?[yg]clid=',1, 0) as utm_flag
+            , url
+            , parse_url(concat('http://', referrer), 'HOST') as ref_host
+            , hits_old
+            , ip
+         from(select id
+                   , avg(cast(timestamp as Bigint)) as time
+                   , url
+                   , referrer
+                   , ymd
+                   , ip
+                   , count(*) as hits_old
+                from prod_raw_liveinternet.access_log
+               where ymd = '2016-10-18'
+               group
+                  by id
+                   , url
+                   , referrer,ymd,ip,cast(timestamp/10 as Bigint)
+            ) a
+      LATERAL
+         VIEW explode(split(parse_url(concat('http://', url), "PATH"), '/')) tt AS path_fr
+     ) t
+ group
+    by ymd
+     , id
+     , urlfr
+;
+
+-- alter table prod_features_liveinternet.visits_r partition (ymd = '2016-10-18') concatenate;
+
+
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+insert overwrite
+ table prod_features_liveinternet.visits_r partition(ymd)    
+select id
+     , urlfr
+     , min(named_struct( 't', if((split(urlfr,'#')[0] <> ref_host) and not ref_host in ('','-','B'), time, time + 10000000)
+     , 'ref_host', ref_host)).ref_host as ref_host
+     , cast(count(*) as int) hits
+     , cast(sum(hits_old) as int) hits_old
+     , cast(count(distinct url) as int) as page_cnt
+     , cast(MAX(time) - MIN(time) as int) as duration
+     , AVG(time) as avg_time
+     , stddev(time) as time_std
+     , max(email_visit_flag) as email_visit
+     , max(email_ru_flag) as emailru
+     , max(utm_flag) as utm
+     , max(if(regexp_extract(ref_host,'(.*)\\.[a-zA-Z]*$',1) in ('google','google.co','google.com','yandex','go.mail','nova.rambler','bing','yahoo'),1, 0)) as ref_search
+     , max(if(regexp_extract(ref_host,'([^.]*)\\.[a-zA-Z]*$',1) in ('vk','facebook','ok','odnoklassniki','instagram','youtube'),1, 0)) as ref_social
+     , max(ip) as ip
+     , count(distinct ip) as ip_cnt
+     , max(current_timestamp()) as load_dttm
+     , ymd
+  from(select id
+            , time
+            , concat(parse_url(concat('http://', url), 'HOST'), '#', path_fr) as urlfr
+            , ymd
+            , if(lower(concat(url,' ',referrer)) rlike '[^a-z](utm[_-]?[a-z]{0,15}|from|source|src(id)?)[%a-f0-9]{0,4}[=-_]?e?mail',1, 0) as email_visit_flag
+            , if(lower(referrer) rlike 'e\\.mail\\.ru',1, 0) as email_ru_flag
+            , if(lower(concat(url,' ',referrer)) rlike '([^a-zA-Z]utm(_|-|=|%[0-9][0-9a-fA-F]))|/?[yg]clid=',1, 0) as utm_flag
+            , url
+            , parse_url(concat('http://', referrer), 'HOST') as ref_host
+            , hits_old
+            , ip
+         from(select id
+                   , avg(cast(timestamp as Bigint)) as time
+                   , url
+                   , referrer
+                   , ymd
+                   , ip
+                   , count(*) as hits_old
+                from prod_raw_liveinternet.access_log
+               where ymd = '2016-10-25'
+               group
+                  by id
+                   , url
+                   , referrer,ymd,ip,cast(timestamp/10 as Bigint)
+            ) a
+      LATERAL
+         VIEW explode(split(parse_url(concat('http://', url), "PATH"), '/')) tt AS path_fr
+     ) t
+ group
+    by ymd
+     , id
+     , urlfr
+;
+
+alter table prod_features_liveinternet.visits_r partition (ymd = '2016-10-25') concatenate
+
+
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+insert overwrite
+ table prod_features_liveinternet.visits_r partition(ymd)    
+select id
+     , urlfr
+     , min(named_struct( 't', if((split(urlfr,'#')[0] <> ref_host) and not ref_host in ('','-','B'), time, time + 10000000)
+     , 'ref_host', ref_host)).ref_host as ref_host
+     , cast(count(*) as int) hits
+     , cast(sum(hits_old) as int) hits_old
+     , cast(count(distinct url) as int) as page_cnt
+     , cast(MAX(time) - MIN(time) as int) as duration
+     , AVG(time) as avg_time
+     , stddev(time) as time_std
+     , max(email_visit_flag) as email_visit
+     , max(email_ru_flag) as emailru
+     , max(utm_flag) as utm
+     , max(if(regexp_extract(ref_host,'(.*)\\.[a-zA-Z]*$',1) in ('google','google.co','google.com','yandex','go.mail','nova.rambler','bing','yahoo'),1, 0)) as ref_search
+     , max(if(regexp_extract(ref_host,'([^.]*)\\.[a-zA-Z]*$',1) in ('vk','facebook','ok','odnoklassniki','instagram','youtube'),1, 0)) as ref_social
+     , max(ip) as ip
+     , count(distinct ip) as ip_cnt
+     , max(current_timestamp()) as load_dttm
+     , ymd
+  from(select id
+            , time
+            , concat(parse_url(concat('http://', url), 'HOST'), '#', path_fr) as urlfr
+            , ymd
+            , if(lower(concat(url,' ',referrer)) rlike '[^a-z](utm[_-]?[a-z]{0,15}|from|source|src(id)?)[%a-f0-9]{0,4}[=-_]?e?mail',1, 0) as email_visit_flag
+            , if(lower(referrer) rlike 'e\\.mail\\.ru',1, 0) as email_ru_flag
+            , if(lower(concat(url,' ',referrer)) rlike '([^a-zA-Z]utm(_|-|=|%[0-9][0-9a-fA-F]))|/?[yg]clid=',1, 0) as utm_flag
+            , url
+            , parse_url(concat('http://', referrer), 'HOST') as ref_host
+            , hits_old
+            , ip
+         from(select id
+                   , avg(cast(timestamp as Bigint)) as time
+                   , url
+                   , referrer
+                   , ymd
+                   , ip
+                   , count(*) as hits_old
+                from prod_raw_liveinternet.access_log
+               where ymd = '2016-11-01'
+               group
+                  by id
+                   , url
+                   , referrer,ymd,ip,cast(timestamp/10 as Bigint)
+            ) a
+      LATERAL
+         VIEW explode(split(parse_url(concat('http://', url), "PATH"), '/')) tt AS path_fr
+     ) t
+ group
+    by ymd
+     , id
+     , urlfr
+;
+
+alter table prod_features_liveinternet.visits_r partition (ymd = '2016-11-01') concatenate;
+
+create table user_kposminin.la_many_features_20161018 as
+select
+       v.ymd
+     , b.contact_str as phone
+     , max(if(p.id is Null,0,1)) as label
+     , max(if(p.first_day = 1, 1, 0)) as first_day
+     , max(score) as max_tcs_score
+     , max(
+         if(
+          hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+          t.score,
+          Null
+         )
+       ) as max_work_hours_tcs_score
+     , avg(
+         if(
+           hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+           t.score,
+           Null
+         )    
+       ) as avg_work_hours_tcs_score
+     , count(distinct v.urlfr) as cnt
+     , sum(v.hits) as hits
+     , sum(v.ip_cnt) as ip_cnt
+     , sum(v.page_cnt) as page_cnt
+     , count(distinct v.id) as id_cnt
+     , sum(if(hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20,v.hits,0)) as work_hours_hits
+     , min(hour(v.avg_time)) as min_avg_hour
+     , max(hour(v.avg_time)) as max_avg_hour
+     , avg(hour(v.avg_time)) as avg_avg_hour
+     , sum(duration) as sum_duration
+     , avg(duration) as avg_duration
+     , sum(if(v.urlfr like 'e.mail.ru%',1,0)) as emailru
+     , sum(if(v.urlfr like 'm.%',1,0))/sum(1) as mobile_share
+     , sum(if(v.urlfr rlike '^(m\.)?vk.com%', 1, 0))/sum(1) as vk_share
+     , sum(if(v.urlfr like 'vk.com%' or v.urlfr rlike '^(m\.)?ok\.ru' or v.urlfr like 'm.odnoklassniki.ru%' or v.urlfr rlike '^(m\.)?my.mail.ru',1,0))/sum(1) as social_share
+     , stddev(v.avg_time) as hour_std     
+     , log(avg((t.cnt_positive + 0.1)/(t.cnt_total - t.cnt_positive + 0.1))) as log_avg_exp_tsc_score
+     , avg(t.score) as avg_tcs_score
+     , sum(t.score) as sum_tcs_score
+     , min(t.score) as min_tcs_score
+     , percentile_approx(t.score,0.75) as q75_tcs_score
+     , percentile_approx(t.score,0.25) as q25_tcs_score
+     , percentile_approx(t.score,0.5) as q50_tcs_score
+     , percentile_approx(t.score,0.9) as q90_tcs_score
+     , count(distinct if(t.score > -7, v.urlfr,Null)) as good_tcs_urlfr_visited_cnt
+     , count(distinct if(t.score > -5, v.urlfr,Null)) as very_good_tcs_urlfr_visited_cnt
+     , max(if(v.ref_search = 1,t.score,Null)) as max_ref_search_score 
+     , avg(if(v.ref_search = 1,t.score,Null)) as avg_ref_search_score 
+     , percentile_approx(if(ref_search = 1,t.score,Null),0.9) as q90_ref_search_score 
+     , sum(ref_search) as cnt_ref_search
+     , max(
+             named_struct( 
+             'score',t.score, 
+             'avg_hour',hour(v.avg_time)  
+             )           
+          ).avg_hour as max_urlfr_avg_hour
+     , max(
+             named_struct(
+             'score', t.score,
+             'hits', v.hits
+             )           
+          ).hits as max_urlfr_hits_cnt
+     , max(
+             named_struct(
+             'score', t.score,
+             'cnt_total', t.cnt_total
+             )           
+          ).cnt_total as max_urlfr_cnt_total
+
+     , max(if(ref_social = 1,t.score,Null)) as max_ref_social_score 
+     , avg(if(ref_social = 1,t.score,Null)) as avg_ref_social_score 
+     , percentile_approx(if(ref_social = 1,t.score,Null),0.9) as q90_ref_social_score 
+     , sum(ref_social) as cnt_ref_social
+
+     , max(if(utm = 1,t.score,Null)) as max_utm_score 
+     , avg(if(utm = 1,t.score,Null)) as avg_utm_score 
+     , percentile_approx(if(utm = 1,t.score,Null),0.9) as q90_utm_score 
+     , sum(utm) as cnt_utm
+     
+     , max(if(emailru = 1, t.score,Null)) as max_emailru_score 
+     , avg(if(emailru = 1, t.score,Null)) as avg_emailru_score 
+     , percentile_approx(if(emailru = 1, t.score,Null),0.9) as q90_emailru_score 
+     , sum(emailru) as cnt_emailru
+
+     , max(if(emailru + email_visit > 0, t.score,Null)) as max_email_score 
+     , avg(if(emailru + email_visit > 0, t.score,Null)) as avg_email_score 
+     , percentile_approx(if(emailru + email_visit > 0, t.score,Null), 0.9) as q90_email_score 
+     , sum(if(emailru + email_visit > 0,1,0)) as cnt_email
+
+  from prod_features_liveinternet.visits_r v
+  left join (  
+       select id, if(ymd = '2016-10-19',1,0) as first_day from prod_features_liveinternet.user_action 
+        where ymd between '2016-10-19' and '2016-10-21'
+          and action_type = 'tinkoff_platinum_complete_application'
+     ) p   on p.id = v.id
+  left join (
+       select urlfr
+            , log((cnt_positive + 0.1)/(cnt_total - cnt_positive + 0.1)) as score
+            , cnt_positive
+            , cnt_total
+         from prod_features_liveinternet.urlfr_tgt_cnt_cumulative2 a
+        inner join 
+             ( select max(ymd) as ymd
+                 from prod_features_liveinternet.urlfr_tgt_cnt_cumulative2 
+                where ymd < '2016-10-18'
+             ) b   on a.ymd = b.ymd
+       where target  = 'tinkoff_platinum_complete_application@tinkoff_action'  
+         and (cnt_total > 300000 or cnt_positive > 30)
+     ) t on t.urlfr = v.urlfr
+ inner join (select uid_str,h_uid_rk from prod_dds.h_uid where load_src = 'LI.02') d on d.uid_str = v.id
+ inner join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'PHONE') c on d.h_uid_rk = c.h_uid_rk
+ inner join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'PHONE') b on b.h_contact_rk = c.h_contact_rk  
+ where 
+       v.ymd = '2016-10-18'
+ group by 
+       b.contact_str
+     , v.ymd
+;
+       
+
+
+
+
+create table user_kposminin.la_many_features_20161025 as
+select
+       v.ymd
+     , b.contact_str as phone
+     , max(if(p.id is Null,0,1)) as label
+     , max(if(p.first_day = 1, 1, 0)) as first_day
+     , max(score) as max_tcs_score
+     , max(
+         if(
+          hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+          t.score,
+          Null
+         )
+       ) as max_work_hours_tcs_score
+     , avg(
+         if(
+           hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+           t.score,
+           Null
+         )    
+       ) as avg_work_hours_tcs_score
+     , count(distinct v.urlfr) as cnt
+     , sum(v.hits) as hits
+     , sum(v.ip_cnt) as ip_cnt
+     , sum(v.page_cnt) as page_cnt
+     , count(distinct v.id) as id_cnt
+     , sum(if(hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20,v.hits,0)) as work_hours_hits
+     , min(hour(v.avg_time)) as min_avg_hour
+     , max(hour(v.avg_time)) as max_avg_hour
+     , avg(hour(v.avg_time)) as avg_avg_hour
+     , sum(duration) as sum_duration
+     , avg(duration) as avg_duration
+     , sum(if(v.urlfr like 'e.mail.ru%',1,0)) as emailru
+     , sum(if(v.urlfr like 'm.%',1,0))/sum(1) as mobile_share
+     , sum(if(v.urlfr rlike '^(m\.)?vk.com%', 1, 0))/sum(1) as vk_share
+     , sum(if(v.urlfr like 'vk.com%' or v.urlfr rlike '^(m\.)?ok\.ru' or v.urlfr like 'm.odnoklassniki.ru%' or v.urlfr rlike '^(m\.)?my.mail.ru',1,0))/sum(1) as social_share
+     , stddev(v.avg_time) as hour_std     
+     , log(avg((t.cnt_positive + 0.1)/(t.cnt_total - t.cnt_positive + 0.1))) as log_avg_exp_tsc_score
+     , avg(t.score) as avg_tcs_score
+     , sum(t.score) as sum_tcs_score
+     , min(t.score) as min_tcs_score
+     , percentile_approx(t.score,0.75) as q75_tcs_score
+     , percentile_approx(t.score,0.25) as q25_tcs_score
+     , percentile_approx(t.score,0.5) as q50_tcs_score
+     , percentile_approx(t.score,0.9) as q90_tcs_score
+     , count(distinct if(t.score > -7, v.urlfr,Null)) as good_tcs_urlfr_visited_cnt
+     , count(distinct if(t.score > -5, v.urlfr,Null)) as very_good_tcs_urlfr_visited_cnt
+     , max(if(v.ref_search = 1,t.score,Null)) as max_ref_search_score 
+     , avg(if(v.ref_search = 1,t.score,Null)) as avg_ref_search_score 
+     , percentile_approx(if(ref_search = 1,t.score,Null),0.9) as q90_ref_search_score 
+     , sum(ref_search) as cnt_ref_search
+     , max(
+             named_struct( 
+             'score',t.score, 
+             'avg_hour',hour(v.avg_time)  
+             )           
+          ).avg_hour as max_urlfr_avg_hour
+     , max(
+             named_struct(
+             'score', t.score,
+             'hits', v.hits
+             )           
+          ).hits as max_urlfr_hits_cnt
+     , max(
+             named_struct(
+             'score', t.score,
+             'cnt_total', t.cnt_total
+             )           
+          ).cnt_total as max_urlfr_cnt_total
+
+     , max(if(ref_social = 1,t.score,Null)) as max_ref_social_score 
+     , avg(if(ref_social = 1,t.score,Null)) as avg_ref_social_score 
+     , percentile_approx(if(ref_social = 1,t.score,Null),0.9) as q90_ref_social_score 
+     , sum(ref_social) as cnt_ref_social
+
+     , max(if(utm = 1,t.score,Null)) as max_utm_score 
+     , avg(if(utm = 1,t.score,Null)) as avg_utm_score 
+     , percentile_approx(if(utm = 1,t.score,Null),0.9) as q90_utm_score 
+     , sum(utm) as cnt_utm
+     
+     , max(if(emailru = 1, t.score,Null)) as max_emailru_score 
+     , avg(if(emailru = 1, t.score,Null)) as avg_emailru_score 
+     , percentile_approx(if(emailru = 1, t.score,Null),0.9) as q90_emailru_score 
+     , sum(emailru) as cnt_emailru
+
+     , max(if(emailru + email_visit > 0, t.score,Null)) as max_email_score 
+     , avg(if(emailru + email_visit > 0, t.score,Null)) as avg_email_score 
+     , percentile_approx(if(emailru + email_visit > 0, t.score,Null), 0.9) as q90_email_score 
+     , sum(if(emailru + email_visit > 0,1,0)) as cnt_email
+
+  from prod_features_liveinternet.visits_rorc v
+  left join (  
+       select id, if(ymd = '2016-10-26',1,0) as first_day from prod_features_liveinternet.user_action 
+        where ymd between '2016-10-26' and '2016-10-28'
+          and action_type = 'tinkoff_platinum_complete_application'
+     ) p   on p.id = v.id
+  left join (
+       select urlfr, cnt_positive, cnt_total, log((cnt_positive + 0.1)/(cnt_total - cnt_positive + 0.1)) as score
+         from prod_features_liveinternet.urlfr_tgt_cnt_cumulative
+        where ymd1_ymd2_target  = '2016-08-19_2016-09-18_tinkoff_platinum_complete_application@tinkoff_action'      
+          and (cnt_total > 300000 or cnt_positive > 30)
+     ) t   on t.urlfr = v.urlfr
+ inner join (select uid_str,h_uid_rk from prod_dds.h_uid where load_src = 'LI.02') d on d.uid_str = v.id
+ inner join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'PHONE') c on d.h_uid_rk = c.h_uid_rk
+ inner join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'PHONE') b on b.h_contact_rk = c.h_contact_rk  
+ where 
+       v.ymd = '2016-10-25'
+ group by 
+       b.contact_str
+     , v.ymd
+;
+
+
+
+create table user_kposminin.la_many_features_20161103 as
+select
+       v.ymd
+     , b.contact_str as phone
+     , max(if(p.id is Null,0,1)) as label
+     , max(if(p.first_day = 1, 1, 0)) as first_day
+     , max(score) as max_tcs_score
+     , max(
+         if(
+          hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+          t.score,
+          Null
+         )
+       ) as max_work_hours_tcs_score
+     , avg(
+         if(
+           hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20, 
+           t.score,
+           Null
+         )    
+       ) as avg_work_hours_tcs_score
+     , count(distinct v.urlfr) as cnt
+     , sum(v.hits) as hits
+     , sum(v.ip_cnt) as ip_cnt
+     , sum(v.page_cnt) as page_cnt
+     , count(distinct v.id) as id_cnt
+     , sum(if(hour(v.avg_time) >= 9 and hour(v.avg_time) <= 20,v.hits,0)) as work_hours_hits
+     , min(hour(v.avg_time)) as min_avg_hour
+     , max(hour(v.avg_time)) as max_avg_hour
+     , avg(hour(v.avg_time)) as avg_avg_hour
+     , sum(duration) as sum_duration
+     , avg(duration) as avg_duration
+     , sum(if(v.urlfr like 'e.mail.ru%',1,0)) as emailru
+     , sum(if(v.urlfr like 'm.%',1,0))/sum(1) as mobile_share
+     , sum(if(v.urlfr rlike '^(m\.)?vk.com%', 1, 0))/sum(1) as vk_share
+     , sum(if(v.urlfr like 'vk.com%' or v.urlfr rlike '^(m\.)?ok\.ru' or v.urlfr like 'm.odnoklassniki.ru%' or v.urlfr rlike '^(m\.)?my.mail.ru',1,0))/sum(1) as social_share
+     , stddev(v.avg_time) as hour_std     
+     , log(avg((t.cnt_positive + 0.1)/(t.cnt_total - t.cnt_positive + 0.1))) as log_avg_exp_tsc_score
+     , avg(t.score) as avg_tcs_score
+     , sum(t.score) as sum_tcs_score
+     , min(t.score) as min_tcs_score
+     , percentile_approx(t.score,0.75) as q75_tcs_score
+     , percentile_approx(t.score,0.25) as q25_tcs_score
+     , percentile_approx(t.score,0.5) as q50_tcs_score
+     , percentile_approx(t.score,0.9) as q90_tcs_score
+     , count(distinct if(t.score > -7, v.urlfr,Null)) as good_tcs_urlfr_visited_cnt
+     , count(distinct if(t.score > -5, v.urlfr,Null)) as very_good_tcs_urlfr_visited_cnt
+     , max(if(v.ref_search = 1,t.score,Null)) as max_ref_search_score 
+     , avg(if(v.ref_search = 1,t.score,Null)) as avg_ref_search_score 
+     , percentile_approx(if(ref_search = 1,t.score,Null),0.9) as q90_ref_search_score 
+     , sum(ref_search) as cnt_ref_search
+     , max(
+             named_struct( 
+             'score',t.score, 
+             'avg_hour',hour(v.avg_time)  
+             )           
+          ).avg_hour as max_urlfr_avg_hour
+     , max(
+             named_struct(
+             'score', t.score,
+             'hits', v.hits
+             )           
+          ).hits as max_urlfr_hits_cnt
+     , max(
+             named_struct(
+             'score', t.score,
+             'cnt_total', t.cnt_total
+             )           
+          ).cnt_total as max_urlfr_cnt_total
+
+     , max(if(ref_social = 1,t.score,Null)) as max_ref_social_score 
+     , avg(if(ref_social = 1,t.score,Null)) as avg_ref_social_score 
+     , percentile_approx(if(ref_social = 1,t.score,Null),0.9) as q90_ref_social_score 
+     , sum(ref_social) as cnt_ref_social
+
+     , max(if(utm = 1,t.score,Null)) as max_utm_score 
+     , avg(if(utm = 1,t.score,Null)) as avg_utm_score 
+     , percentile_approx(if(utm = 1,t.score,Null),0.9) as q90_utm_score 
+     , sum(utm) as cnt_utm
+     
+     , max(if(emailru = 1, t.score,Null)) as max_emailru_score 
+     , avg(if(emailru = 1, t.score,Null)) as avg_emailru_score 
+     , percentile_approx(if(emailru = 1, t.score,Null),0.9) as q90_emailru_score 
+     , sum(emailru) as cnt_emailru
+
+     , max(if(emailru + email_visit > 0, t.score,Null)) as max_email_score 
+     , avg(if(emailru + email_visit > 0, t.score,Null)) as avg_email_score 
+     , percentile_approx(if(emailru + email_visit > 0, t.score,Null), 0.9) as q90_email_score 
+     , sum(if(emailru + email_visit > 0,1,0)) as cnt_email
+
+  from prod_features_liveinternet.visits_rorc v
+  left join (  
+       select id, if(ymd = '2016-11-04',1,0) as first_day from prod_features_liveinternet.user_action 
+        where ymd between '2016-11-04' and '2016-11-06'
+          and action_type = 'tinkoff_platinum_complete_application'
+     ) p   on p.id = v.id
+  left join (
+       select urlfr, cnt_positive, cnt_total, log((cnt_positive + 0.1)/(cnt_total - cnt_positive + 0.1)) as score
+         from prod_features_liveinternet.urlfr_tgt_cnt_cumulative
+        where ymd1_ymd2_target  = '2016-08-19_2016-09-18_tinkoff_platinum_complete_application@tinkoff_action'      
+          and (cnt_total > 300000 or cnt_positive > 30)
+     ) t   on t.urlfr = v.urlfr
+ inner join (select uid_str,h_uid_rk from prod_dds.h_uid where load_src = 'LI.02') d on d.uid_str = v.id
+ inner join (select h_contact_rk, h_uid_rk from prod_dds.l_uid_contact where contact_type_cd = 'PHONE') c on d.h_uid_rk = c.h_uid_rk
+ inner join (select h_contact_rk, contact_str from prod_dds.h_contact where contact_type_cd = 'PHONE') b on b.h_contact_rk = c.h_contact_rk  
+ where 
+       v.ymd = '2016-11-03'
+ group by 
+       b.contact_str
+     , v.ymd
+;
+
+
+
+
+
+--verbose=[true/false]
+--showWarnings=[true/false]
+--showNestedErrs=[true/false]
+
+nohup /data1/share/LightGBM/lightgbm  config=train.conf data=/data1/share/kosm/data/la_many_feat_20161025_1.txt valid=/data1/share/kosm/data/la_many_feat_20161103_1.txt > log1.txt 2>1&
+
+beeline -u "jdbc:hive2://ds-hadoop-cs01p:10000/" -n kposminin --incremental=true --showheader=false --outputformat=tsv2 --maxwidth=5000 --silent=true --showWarnings=false --showNestedErrs=false --verbose=false --nullemptystring=true -f /home/k.osminin/scripts/la_many_feat_20161213.hql > /data1/share/kosm/data/la_many_feat_20161103.txt
+

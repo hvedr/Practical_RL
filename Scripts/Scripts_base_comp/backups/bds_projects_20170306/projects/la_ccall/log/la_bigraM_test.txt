@@ -1,0 +1,36 @@
+2016-12-23 15:27:50.747968: la_bigram_ccall segment update started.
+2016-12-23 15:30:17.343579 Got visits_r for 2016-12-22. Calculating signals later than 2016-12-20
+2016-12-23 15:30:17.343668. SampleFile with 36160270 ../data/la_bigram_ccall_20161222.txt
+ rows downloaded. Starting prediction.
+2016-12-23 20:30:27.830274. Prediction done. Uploading to hive.
+
+
+drop table if exists prod_lookalike.la_bigram_ccall_20161222
+
+
+CREATE EXTERNAL TABLE prod_lookalike.la_bigram_ccall_20161222 (  
+  ymd string,
+  phone string,
+  score float
+)
+row format delimited fields terminated by '|' stored as textfile
+
+
+LOAD DATA INPATH '/user/bigdatasys/data/la_bigram_ccall_phones_predict_20161222.txt' OVERWRITE INTO TABLE prod_lookalike.la_bigram_ccall_20161222
+
+
+insert into prod_lookalike.phone_x_segment partition (segment_nm, ymd)
+select
+    a.phone as phone_num
+   ,a.score
+   ,current_timestamp() as load_dttm
+   ,'la_bigram_ccall' as segment_nm
+   ,a.ymd as ymd
+from
+  prod_lookalike.la_bigram_ccall_20161222 a
+  left join prod_lookalike.threshold th on th.segment_nm = 'la_bigram_ccall'
+where
+  a.score >= nvl(th.threshold, -999999)
+
+2016-12-23 20:31:51.790374. la_bigram_ccall update and uploade into prod_lookalike.phone_x_segmentfor dates later than 2016-12-20 done.
+2016-12-23 20:31:51.800845: prod_lookalike.stand_la_ccall update successfully finished.

@@ -1,0 +1,9 @@
+
+- обучить 
+/data1/share/xgboost//xgboost hasher_example1.conf
+
+- дообучить на основе существующей
+/data1/share/xgboost//xgboost hasher_example1.conf  model_in=0010_iterlearn.model
+
+-сделать предсказание
+/data1/share/xgboost//xgboost hasher_example1.conf task=pred model_in=0010_iterlearn.model test:data=/data1/share/kosm/data/ha_proc_20161011.txt

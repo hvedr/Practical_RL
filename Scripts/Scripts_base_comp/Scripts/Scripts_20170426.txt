@@ -1,0 +1,35 @@
+-- cred_app_scoring
+
+-- monthly coeff
+WITH t AS 
+ (
+   SELECT
+   v.url_fragment AS urlfr
+   ,count(distinct if(ta.ymd between v.ymd and date_add(v.ymd,3),ta.id,Null)) as cnt_positive
+   ,count(distinct v.id) as cnt_total
+  FROM
+   prod_odd.visit_feature v
+   left join (
+     SELECT DISTINCT a.id,a.ymd 
+     FROM prod_features_liveinternet.user_action_new a 
+     WHERE a.ymd between date_add('2017-02-01', -30) and date_add('2017-02-01',3) 
+       and a.action_type = 'tinkoff_platinum_approved_application'
+   ) ta on v.id = ta.id
+  WHERE
+   v.ymd between date_add('2017-02-01', -30) and '2017-02-01'
+   and v.load_src = 'LI.02'
+  GROUP BY 
+   v.url_fragment
+   ) 
+INSERT OVERWRITE TABLE 
+  user_kposminin.urlfr_tgt_cnt PARTITION (ymd='2017-02-01', target='tinkoff_platinum_approved_application_new03@1month') 
+SELECT 
+ urlfr AS urlfr
+ ,nvl(cnt_positive, 0) as cnt_positive
+ ,cnt_total
+ ,log((cnt_positive + 0.1)/(cnt_total - cnt_positive + 0.1)) as score
+FROM t 
+;
+
+Они работают лучше:
+скрипт проверки

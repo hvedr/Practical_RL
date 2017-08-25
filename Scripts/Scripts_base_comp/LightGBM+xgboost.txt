@@ -1,0 +1,15 @@
+export HADOOP_CLIENT_OPTS="-Djline.terminal=jline.UnsupportedTerminal"
+beeline -u "jdbc:hive2://ds-hadoop-cs01p:10000/" -n kposminin --incremental=true --showheader=false --outputformat=tsv2 --maxwidth=5000 --silent=true -f /home/k.osminin/scripts/bigrams.hql > bigrams_20161012.txt
+
+#Выделение меток
+perl -ne 'print substr($_,0,1)' /data1/share/kosm/data/bigrams_20161012.txt > /data1/share/kosm/data/bigrams_labels_20161012.txt
+
+#Обучение
+nohup /data1/share/LightGBM/lightgbm  config=train.conf data=/data1/share/kosm/data/bigrams_20161012_proc1.txt valid=/data1/share/kosm/data/bigrams_20161019.txt > log.txt 2>1&
+
+#Предсказание на тесте
+data1/share/LightGBM/lightgbm  config=test.conf input_model=bigr_model_trunc.model
+
+
+#документация 
+https://github.com/Microsoft/LightGBM/blob/master/docs/Python-API.md

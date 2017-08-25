@@ -1,0 +1,152 @@
+drop table if exists user_kposminin.cc_wuid_201605_201609;
+create table user_kposminin.cc_wuid_201605_201609 as
+select distinct 
+    dt_created,
+    ymd, 
+    wuid, 
+    (case is_processed when 3 then 1 else 0 end) as completed_flag,
+    0 as revisited
+from prod_dds.portal_application 
+where dt_created >= '2016-01-01' and dt_created < '2016-09-30' 
+and wuid is not null 
+and product_name = 'cc_platinum' 
+and lower(lp) not like '%agent%'
+and is_processed = 3
+and linked_id is Null
+;
+
+-- добавляем дозаполненные заявки
+insert into user_kposminin.cc_wuid_201605_201609
+select
+    min(dt_created) as dt_created,
+    min(ymd) as ymd,
+    min(
+       named_struct(
+        'dt_created', dt_created,
+        'wuid', wuid
+       )
+    ).wuid as wuid,
+    1 as completed_flag,
+    1 as revisited
+from
+    (
+    select
+        s.id,
+        f.dt_created,
+        f.ymd,
+        f.wuid
+    from (select id, dt_created, ymd,wuid,is_processed,linked_id
+          from prod_dds.portal_application
+          where    is_processed = 3            
+               and lower(lp) not like '%agent%'
+               and product_name = 'cc_platinum' 
+               and not linked_id is Null
+               and dt_created >= '2016-01-01' and dt_created < '2016-09-30' 
+          ) s
+    inner join (select id, dt_created, ymd,wuid,is_processed,linked_id
+          from prod_dds.portal_application
+          where    is_processed = 21 
+               and lower(lp) not like '%agent%'
+               and product_name = 'cc_platinum'            
+               and dt_created >= '2016-01-01'
+          ) f on s.linked_id = f.id
+    ) wd
+group by id
+;
+
+
+drop table if exists user_kposminin.cc_wuid_li_201605_201609;
+create table user_kposminin.cc_wuid_li_201605_201609 as
+select
+     a.ymd
+    ,a.dt_created
+    ,a.wuid
+    ,a.completed_flag
+    ,a.revisited
+    ,b.dmp_id
+    ,c.source_id as li_id
+from
+ user_kposminin.cc_wuid_201605_201609 a
+ inner join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'tcs') b on a.wuid = b.source_id
+ inner join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'liveinternet') c on b.dmp_id = c.dmp_id
+;
+
+
+drop table if exists user_kposminin.cc_wuid_li_unique_201605_201609;
+create table user_kposminin.cc_wuid_li_unique_201605_201609 as
+select 
+  a.ymd
+ ,a.li_id
+ ,max(a.dt_created) as dt_created
+ ,min(a.revisited) as revisited
+ ,max(a.completed_flag) as completed_flag 
+from 
+ user_kposminin.cc_wuid_li_201605_201609 a
+ inner join 
+(
+select
+ wuid
+ ,count(distinct li_id) li_cnt
+from
+ user_kposminin.cc_wuid_li_201605_201609 
+group by
+ wuid
+having
+ li_cnt = 1
+) t on a.wuid = t.wuid
+where not li_id is NULL
+group by a.ymd, a.li_id
+;
+
+
+-- вставить результаты в таблицу prod_features_liveinternet.tinkoff_actions partition
+insert overwrite table prod_features_liveinternet.tinkoff_actions partition (action_type)
+select 
+    li_id as id,
+    dt_created as time,
+    ymd,
+    'tinkoff_platinum_complete_application' as action_type
+from user_kposminin.cc_wuid_li_unique_201605_201609;
+
+
+
+
+
+---------------------------------------------
+Мишин скрипт
+create table user_mvsurovikov.cc_wuid_20160901 as
+select distinct wuid from prod_dds.portal_application where ymd = '2016-09-01' and wuid is not null and product_name = 'cc_platinum' and lower(lp) not like '%agent%';
+
+drop table if exists user_mvsurovikov.cc_wuid_20160901_li;
+create table user_mvsurovikov.cc_wuid_20160901_li as
+select
+a.wuid
+,b.dmp_id
+,c.source_id as li_id
+from
+ user_mvsurovikov.cc_wuid_20160901 a
+ left join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'tcs') b on a.wuid = b.source_id
+ left join (select distinct source_id, dmp_id from prod_emart.datamind_matching_table where source_type = 'liveinternet') c on b.dmp_id = c.dmp_id
+;
+drop table if exists user_mvsurovikov.cc_wuid_20160901_li_unique;
+create table user_mvsurovikov.cc_wuid_20160901_li_unique as
+select distinct
+ a.li_id
+from 
+ user_mvsurovikov.cc_wuid_20160901_li a
+ inner join 
+(
+select
+ wuid
+ ,count(distinct li_id) li_cnt
+from
+ user_mvsurovikov.cc_wuid_20160901_li
+group by
+ wuid
+having
+ li_cnt = 1
+) t on a.wuid = t.wuid
+;
+```
+
+Mikhail Surovikov [3:20 PM]

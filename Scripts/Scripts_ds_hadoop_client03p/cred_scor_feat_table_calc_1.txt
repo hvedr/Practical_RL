@@ -1,0 +1,2992 @@
+nohup: ignoring input
+2017-05-26 16:06:16.016977: Calc cred scoring feat acc.
+2017-05-26 16:06:16.242792. Executing 
+    set hive.vectorized.execution.enabled=true
+
+
+
+2017-05-26 16:06:16.244375. Executing 
+    set mapreduce.map.memory.mb=4096
+
+
+
+2017-05-26 16:06:16.246570. Executing 
+    set mapreduce.map.child.java.opts=-Xmx4g
+
+
+
+2017-05-26 16:06:16.248875. Executing 
+    set mapreduce.task.io.sort.mb=1024
+
+
+
+2017-05-26 16:06:16.251027. Executing 
+    set mapreduce.reduce.child.java.opts=-Xmx4g
+
+
+
+2017-05-26 16:06:16.253406. Executing 
+    set mapreduce.reduce.memory.mb=7000
+
+
+
+2017-05-26 16:06:16.255513. Executing 
+    set mapreduce.reduce.shuffle.input.buffer.percent=0.5
+
+
+
+2017-05-26 16:06:16.257567. Executing 
+    set mapreduce.input.fileinputformat.split.minsize=536870912
+
+
+
+2017-05-26 16:06:16.259660. Executing 
+    set mapreduce.input.fileinputformat.split.maxsize=1073741824
+
+
+
+2017-05-26 16:06:16.261788. Executing 
+    set hive.optimize.ppd=true
+
+
+
+2017-05-26 16:06:16.264034. Executing 
+    set hive.merge.smallfiles.avgsize=536870912
+
+
+
+2017-05-26 16:06:16.265913. Executing 
+    set hive.merge.mapredfiles=true
+
+
+
+2017-05-26 16:06:16.267712. Executing 
+    set hive.merge.mapfiles=true
+
+
+
+2017-05-26 16:06:16.269442. Executing 
+    set hive.hadoop.supports.splittable.combineinputformat=true
+
+
+
+2017-05-26 16:06:16.271145. Executing 
+    set hive.exec.reducers.bytes.per.reducer=536870912
+
+
+
+2017-05-26 16:06:16.272963. Executing 
+    set hive.exec.parallel=true
+
+
+
+2017-05-26 16:06:16.274653. Executing 
+    set hive.exec.max.created.files=10000000
+
+
+
+2017-05-26 16:06:16.276327. Executing 
+    set hive.exec.compress.output=true
+
+
+
+2017-05-26 16:06:16.277947. Executing 
+    set hive.exec.dynamic.partition.mode=nonstrict
+
+
+
+2017-05-26 16:06:16.279629. Executing 
+    set hive.exec.max.dynamic.partitions=1000000
+
+
+
+2017-05-26 16:06:16.281464. Executing 
+    set hive.exec.max.dynamic.partitions.pernode=100000
+
+
+
+2017-05-26 16:06:16.283482. Executing 
+    set io.seqfile.compression.type=BLOCK
+
+
+
+2017-05-26 16:06:16.285444. Executing 
+    set mapred.output.compression.codec=org.apache.hadoop.io.compress.BZip2Codec
+
+
+
+2017-05-26 16:06:16.287158. Executing 
+    set mapreduce.map.failures.maxpercent=5
+
+
+
+2017-05-26 16:06:16.288879. Executing 
+
+    set hive.tez.auto.reducer.parallelism=true
+
+
+
+2017-05-26 16:06:16.290696. Executing 
+    set hive.tez.min.partition.factor=0.25
+
+
+
+2017-05-26 16:06:16.292641. Executing 
+    set hive.tez.max.partition.factor=2.0
+
+
+
+2017-05-26 16:06:16.294526. Executing 
+    set tez.runtime.pipelined.sorter.lazy-allocate.memory=true
+
+
+
+2017-05-26 16:06:16.296523. Executing 
+    set hive.exec.dynamic.partition.mode=nonstrict
+
+
+
+2017-05-26 16:06:16.298283. Executing 
+    set mapred.job.queue.name=bigdata_long
+
+
+
+2017-05-26 16:06:16.299957. Executing 
+    
+    CREATE TABLE IF NOT EXISTS `user_kposminin.id_feat_accum`(
+          `id` string, 
+          `load_src` string, 
+          `first_id_ymd` string, 
+          `last_id_ymd` string, 
+          `ymd_cnt` int, 
+          `urlfr_cnt` bigint, -- `cnt` bigint, 
+          `visits_cnt` bigint, 
+          `hits` bigint, 
+          `emailru_sum` bigint, 
+          `mobile_sum` double, 
+          `vk_sum` double, 
+          `social_sum` double, 
+          `work_hours_hits_sum` double, 
+          `avg_hour_sum_sq` bigint, 
+          `avg_hour_sum` bigint, 
+          `max_score1` double, 
+          `max_score2` double, 
+          `max_score3` double, 
+          `max_score4` double, 
+          `max_score5` double, 
+          `max_score6` double, 
+          `min_score1` double, 
+          `min_score2` double, 
+          `min_score3` double, 
+          `min_score4` double, 
+          `min_score5` double, 
+          `min_score6` double, 
+          `sum_score1` double, 
+          `sum_score2` double, 
+          `sum_score3` double, 
+          `sum_score4` double, 
+          `sum_score5` double, 
+          `sum_score6` double, 
+          `cnt_score1` int, 
+          `cnt_score2` int, 
+          `cnt_score3` int, 
+          `cnt_score4` int, 
+          `cnt_score5` int, 
+          `cnt_score6` int, 
+          `good_urlfr_sum_score1` double, 
+          `good_urlfr_sum_score2` double, 
+          `good_urlfr_sum_score3` double,
+          `good_urlfr_sum_score4` double,
+          `good_urlfr_sum_score5` double,
+          `good_urlfr_sum_score6` double)
+    partitioned by (
+          `first_calc_ymd` string, 
+          `last_calc_ymd` string      
+          )
+    
+
+
+
+2017-05-26 16:06:16.321283. Executing 
+
+    
+
+    -- 2016-01-01. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-01',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-01' as first_calc_ymd, 
+     '2016-01-01' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-01' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 16:19:56.778061. Executing 
+    
+
+    -- 2016-01-02. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-02',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-02' as first_calc_ymd, 
+     '2016-01-02' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-02' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 16:56:51.778382. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-02' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-01') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-02' and b.last_calc_ymd = '2016-01-02') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 17:03:27.152432. Executing 
+
+
+    
+
+    -- 2016-01-03. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-03',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-03' as first_calc_ymd, 
+     '2016-01-03' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-03' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 17:23:34.371549. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-03' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-02') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-03' and b.last_calc_ymd = '2016-01-03') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 17:29:42.903233. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-02')
+
+
+
+2017-05-26 17:29:43.078283. Executing 
+    
+
+    -- 2016-01-04. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-04',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-04' as first_calc_ymd, 
+     '2016-01-04' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-04' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 18:00:37.729397. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-04' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-03') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-04' and b.last_calc_ymd = '2016-01-04') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 18:03:42.283449. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-03')
+
+
+
+2017-05-26 18:03:42.468593. Executing 
+    
+
+    -- 2016-01-05. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-05',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-05' as first_calc_ymd, 
+     '2016-01-05' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-05' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 18:27:16.816985. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-05' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-04') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-05' and b.last_calc_ymd = '2016-01-05') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 18:31:32.071074. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-04')
+
+
+
+2017-05-26 18:31:32.247221. Executing 
+    
+
+    -- 2016-01-06. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-06',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-06' as first_calc_ymd, 
+     '2016-01-06' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-06' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 18:58:57.264713. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-06' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-05') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-06' and b.last_calc_ymd = '2016-01-06') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 19:04:07.802594. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-05')
+
+
+
+2017-05-26 19:04:07.964462. Executing 
+    
+
+    -- 2016-01-07. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-07',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-07' as first_calc_ymd, 
+     '2016-01-07' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-07' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 19:41:57.635116. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-07' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-06') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-07' and b.last_calc_ymd = '2016-01-07') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 19:52:42.228431. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-06')
+
+
+
+2017-05-26 19:52:42.421093. Executing 
+    
+
+    -- 2016-01-08. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-08',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-08' as first_calc_ymd, 
+     '2016-01-08' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-08' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 20:28:29.959337. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-08' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-07') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-08' and b.last_calc_ymd = '2016-01-08') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 20:30:06.459987. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-07')
+
+
+
+2017-05-26 20:30:06.609913. Executing 
+    
+
+    -- 2016-01-09. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-09',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-09' as first_calc_ymd, 
+     '2016-01-09' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-09' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 20:45:00.471992. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-09' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-08') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-09' and b.last_calc_ymd = '2016-01-09') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 20:47:12.936813. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-08')
+
+
+
+2017-05-26 20:47:13.105478. Executing 
+    
+
+    -- 2016-01-10. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-10',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-10' as first_calc_ymd, 
+     '2016-01-10' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-10' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 21:19:21.856848. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-10' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-09') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-10' and b.last_calc_ymd = '2016-01-10') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 21:22:56.320442. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-09')
+
+
+
+2017-05-26 21:22:56.485240. Executing 
+    
+
+    -- 2016-01-11. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-11',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-11' as first_calc_ymd, 
+     '2016-01-11' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-11' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 21:50:38.260091. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-11' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-10') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-11' and b.last_calc_ymd = '2016-01-11') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 21:53:44.664246. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-10')
+
+
+
+2017-05-26 21:53:44.821432. Executing 
+    
+
+    -- 2016-01-12. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-12',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-12' as first_calc_ymd, 
+     '2016-01-12' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-12' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 22:15:42.320501. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-12' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-11') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-12' and b.last_calc_ymd = '2016-01-12') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 22:19:12.797676. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-11')
+
+
+
+2017-05-26 22:19:13.317933. Executing 
+    
+
+    -- 2016-01-13. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-13',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-13' as first_calc_ymd, 
+     '2016-01-13' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-13' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 22:42:15.232294. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-13' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-12') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-13' and b.last_calc_ymd = '2016-01-13') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 22:46:26.959339. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-12')
+
+
+
+2017-05-26 22:46:27.133702. Executing 
+    
+
+    -- 2016-01-14. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-14',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-14' as first_calc_ymd, 
+     '2016-01-14' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-14' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 23:03:49.924497. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-14' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-13') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-14' and b.last_calc_ymd = '2016-01-14') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 23:06:18.446038. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-13')
+
+
+
+2017-05-26 23:06:18.601704. Executing 
+    
+
+    -- 2016-01-15. Id_feats 1 day calc
+    with mymd as 
+     (select
+       target,
+       max(ymd) as max_ymd
+      from
+       user_kposminin.urlfr_scores
+      where 
+        ymd < date_add('2016-01-15',-3)
+      group by target
+     )
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd, last_calc_ymd)
+    select 
+     id,
+     load_src, 
+     ymd as first_id_ymd, 
+     ymd as last_id_ymd,
+     1 as ymd_cnt,
+     count(distinct urlfr) as urlfr_cnt,
+     count(urlfr) as visits_cnt,
+     sum(cnt) as hits,
+     sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru_sum,
+     sum(if(urlfr like 'm.%',1,0)) as mobile_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com', 1, 0)) as vk_sum,
+     sum(if(urlfr rlike '^(m\.)?vk.com' or urlfr rlike '^(m\.)?(ok|odnoklassniki)\.ru' or urlfr rlike '^(m\.)?my.mail.ru',1,0)) as social_sum,
+     sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0)) as work_hours_hits_sum,
+     sum( avg_hour * avg_hour) as avg_hour_sum_sq,
+     sum(avg_hour) as avg_hour_sum,
+     max(score1) as max_score1,
+     max(score2) as max_score2,
+     max(score3) as max_score3,
+     max(score4) as max_score4,
+     max(score5) as max_score5,
+     max(score6) as max_score6,
+     min(score1) as min_score1,
+     min(score2) as min_score2,
+     min(score3) as min_score3,
+     min(score4) as min_score4,
+     min(score5) as min_score5,
+     min(score6) as min_score6,
+     sum(score1) as sum_score1,
+     sum(score2) as sum_score2,
+     sum(score3) as sum_score3,
+     sum(score4) as sum_score4, 
+     sum(score5) as sum_score5,
+     sum(score6) as sum_score6, 
+     count(score1) as cnt_score1,
+     count(score2) as cnt_score2,
+     count(score3) as cnt_score3,
+     count(score4) as cnt_score4, 
+     count(score5) as cnt_score5,
+     count(score6) as cnt_score6, 
+     count( if(score1 > -0.2, urlfr,Null)) as good_urlfr_sum_score1,
+     count( if(score2 > -9, urlfr,Null)) as good_urlfr_sum_score2,
+     count( if(score3 > -9, urlfr,Null)) as good_urlfr_sum_score3,
+     count( if(score4 > -2, urlfr,Null)) as good_urlfr_sum_score4,
+     count( if(score5 > -9, urlfr,Null)) as good_urlfr_sum_score5,
+     count( if(score6 > -0.2, urlfr,Null)) as good_urlfr_sum_score6,
+     '2016-01-15' as first_calc_ymd, 
+     '2016-01-15' as last_calc_ymd
+
+    from
+     (select
+        v.id,
+        'LI.02' as load_src, -- !!!! bug
+        v.ymd,
+        v.urlfr,
+        unix_timestamp(v.ymd, 'yyyy-MM-dd')/60/60 + v.avg_hour  as time_h,
+        1 as time_std,
+        v.cnt as cnt,
+        v.avg_hour as avg_hour,
+        t1.score as score1,
+        t2.score as score2,
+        t3.score as score3,
+        t4.score as score4,
+        t5.score as score5,
+        log((t2.cnt_positive + 0.1)/(t3.cnt_positive - t2.cnt_positive + 0.1)) as score6
+      from
+        user_kposminin.ccall_visits v
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'ccall_tinkoff_approve_from_fullapp'
+        ) t1 on t1.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03@tinkoff_action' 
+        ) t2 on t2.urlfr = v.urlfr
+        left join (
+            select urlfr,score,positive as cnt_positive
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+        ) t3 on t3.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_LON_CCR_default'
+        ) t4 on t4.urlfr = v.urlfr
+        left join (
+            select urlfr,score
+              from mymd td
+             inner join user_kposminin.urlfr_scores t on t.target = td.target and t.ymd = td.max_ymd
+             where td.target = 'tinkoff_platinum_approved_application03_1m'
+        ) t5 on t5.urlfr = v.urlfr
+      where 
+        v.ymd = '2016-01-15' 
+     ) a 
+    group by
+      id,load_src,ymd
+    
+
+
+
+2017-05-26 23:26:08.693933. Executing 
+    
+
+    insert overwrite table user_kposminin.id_feat_accum partition (first_calc_ymd,last_calc_ymd)
+    select
+      nvl(a.id,b.id) as id,
+      nvl(a.load_src,b.load_src) as load_src,
+      least(a.first_id_ymd,b.first_id_ymd) as first_id_ymd,
+      greatest(a.last_id_ymd,b.last_id_ymd) as last_id_ymd,
+      nvl(a.ymd_cnt,0) + nvl(b.ymd_cnt,0) as ymd_cnt,
+      nvl(a.urlfr_cnt,0) + nvl(b.urlfr_cnt,0) as urlfr_cnt,
+      nvl(a.visits_cnt,0) + nvl(b.visits_cnt,0) as visits_cnt,
+      nvl(a.hits,0) + nvl(b.hits,0) as hits,
+      nvl(a.emailru_sum,0) + nvl(b.emailru_sum,0) as emailru_sum,
+      nvl(a.mobile_sum,0) + nvl(b.mobile_sum,0) as mobile_sum,
+      nvl(a.vk_sum,0) + nvl(b.vk_sum,0) as vk_sum,
+      nvl(a.social_sum,0) + nvl(b.social_sum,0) as social_sum,
+      nvl(a.work_hours_hits_sum,0) + nvl(b.work_hours_hits_sum,0) as work_hours_hits_sum,
+      nvl(a.avg_hour_sum_sq,0) + nvl(b.avg_hour_sum_sq,0) as avg_hour_sum_sq,
+      nvl(a.avg_hour_sum,0) + nvl(b.avg_hour_sum,0) as avg_hour_sum,
+      greatest(a.max_score1,b.max_score1) as max_score1,
+      greatest(a.max_score2,b.max_score2) as max_score2,
+      greatest(a.max_score3,b.max_score3) as max_score3,
+      greatest(a.max_score4,b.max_score4) as max_score4,
+      greatest(a.max_score5,b.max_score5) as max_score5,
+      greatest(a.max_score6,b.max_score6) as max_score6,
+      least(a.min_score1, b.min_score1) as min_score1,
+      least(a.min_score2, b.min_score2) as min_score2,
+      least(a.min_score3, b.min_score3) as min_score3,
+      least(a.min_score4, b.min_score4) as min_score4,
+      least(a.min_score5, b.min_score5) as min_score5,
+      least(a.min_score6, b.min_score6) as min_score6,
+      nvl(a.sum_score1,0) + nvl(b.sum_score1,0) as sum_score1,
+      nvl(a.sum_score2,0) + nvl(b.sum_score2,0) as sum_score2,
+      nvl(a.sum_score3,0) + nvl(b.sum_score3,0) as sum_score3,
+      nvl(a.sum_score4,0) + nvl(b.sum_score4,0) as sum_score4,
+      nvl(a.sum_score5,0) + nvl(b.sum_score5,0) as sum_score5,
+      nvl(a.sum_score6,0) + nvl(b.sum_score6,0) as sum_score6,
+      nvl(a.cnt_score1,0) + nvl(b.cnt_score1,0) as cnt_score1,
+      nvl(a.cnt_score2,0) + nvl(b.cnt_score2,0) as cnt_score2,
+      nvl(a.cnt_score3,0) + nvl(b.cnt_score3,0) as cnt_score3,
+      nvl(a.cnt_score4,0) + nvl(b.cnt_score4,0) as cnt_score4,
+      nvl(a.cnt_score5,0) + nvl(b.cnt_score5,0) as cnt_score5,
+      nvl(a.cnt_score6,0) + nvl(b.cnt_score6,0) as cnt_score6,
+      nvl(a.good_urlfr_sum_score1,0) + nvl(b.good_urlfr_sum_score1,0) as good_urlfr_sum_score1,
+      nvl(a.good_urlfr_sum_score2,0) + nvl(b.good_urlfr_sum_score2,0) as good_urlfr_sum_score2,
+      nvl(a.good_urlfr_sum_score3,0) + nvl(b.good_urlfr_sum_score3,0) as good_urlfr_sum_score3,
+      nvl(a.good_urlfr_sum_score4,0) + nvl(b.good_urlfr_sum_score4,0) as good_urlfr_sum_score4,
+      nvl(a.good_urlfr_sum_score5,0) + nvl(b.good_urlfr_sum_score5,0) as good_urlfr_sum_score5,
+      nvl(a.good_urlfr_sum_score6,0) + nvl(b.good_urlfr_sum_score6,0) as good_urlfr_sum_score6,
+      '2016-01-01' as first_calc_ymd,
+      '2016-01-15' as last_calc_ymd
+    from 
+      (select * from user_kposminin.id_feat_accum a where a.first_calc_ymd = '2016-01-01' and a.last_calc_ymd = '2016-01-14') a
+      full join (select * from user_kposminin.id_feat_accum b where b.first_calc_ymd = '2016-01-15' and b.last_calc_ymd = '2016-01-15') b 
+        on a.id = b.id and a.load_src = b.load_src
+    
+
+
+
+2017-05-26 23:29:03.203567. Executing 
+
+
+    
+    alter table user_kposminin.id_feat_accum drop partition (first_calc_ymd = '2016-01-01', last_calc_ymd = '2016-01-14')
+
+
+
+2017-05-26 23:29:03.386263. Executing 
+    
+
+
+
+End

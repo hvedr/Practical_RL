@@ -1,0 +1,106 @@
+
+
+create table user_kposminin.days_score as 
+select 0 as lag,1 as score union all
+select 1 as lag,1 as score union all
+select 2 as lag,0.8 as score union all
+select 3 as lag,0.64 as score union all
+select 4 as lag,0.512 as score union all
+select 5 as lag,0.4096 as score union all
+select 6 as lag,0.32768 as score union all
+select 7 as lag,0.262144 as score union all
+select 8 as lag,0.2097152 as score union all
+select 9 as lag,0.16777216 as score union all
+select 10 as lag,0.134217728 as score union all
+select 11 as lag,0.1073741824 as score union all
+select 12 as lag,0.0858993459200001 as score union all
+select 13 as lag,0.068719476736 as score union all
+select 14 as lag,0.0549755813888 as score union all
+select 15 as lag,0.04398046511104 as score union all
+select 16 as lag,0.035184372088832 as score union all
+select 17 as lag,0.0281474976710656 as score union all
+select 18 as lag,0.0225179981368525 as score union all
+select 19 as lag,0.018014398509482 as score union all
+select 20 as lag,0.0144115188075856 as score
+;
+
+create table user_kposminin.segment_score as 
+select 'tcs_cc_appl_started' as segment_nm,1 as score union all
+select 'tcs_cc_appl_started_w_mail' as segment_nm,1 as score union all
+select 'tcs_cc_appl_started_all_coeff' as segment_nm,1 as score union all
+select 'aggregators' as segment_nm,0.7 as score union all
+select 'mfo' as segment_nm,0.7 as score union all
+select 'tcs_cp_app_la' as segment_nm,0.9 as score union all
+select 'banks' as segment_nm,0.7 as score
+;
+
+
+create table user_kposminin.delivery_huid_20161004 as
+select 
+    a.ymd,
+    a.h_uid_rk,
+    a.segment_nm,
+    1/(exp(-a.score)+1) * nvl(b.score,1) * nvl(c.score,0) as probability,
+    a.score as init_score
+from (select h_uid_rk,ymd, segment_nm,score from prod_lookalike.user_x_segment where ymd > '2016-09-14') a
+left join user_kposminin.segment_score b on b.segment_nm = a.segment_nm
+left join user_kposminin.days_score c on c.lag = datediff('2016-10-04',a.ymd)
+;
+
+-- random group
+create table user_kposminin.random_emails as 
+select distinct a.ymd, a.id, h.h_uid_rk, 'control' as segment_nm, c.contact_str from
+(select ymd, id from prod_raw_liveinternet.access_log where ymd = '2016-10-03') a
+inner join prod_dds.h_uid h on a.id = h.uid_str
+inner join prod_dds.l_uid_contact l on l.h_uid_rk = h.h_uid_rk and l.contact_type_cd = 'EMAIL' 
+inner join prod_dds.h_contact c on c.h_contact_rk = l.h_contact_rk and c.contact_type_cd = 'EMAIL' 
+where c.contact_str like '%mail.ru' or c.contact_str like '%bk.ru' or c.contact_str like '%inbox.ru' or c.contact_str like '%list.ru' 
+;
+
+-- insert random segment in top quantiles
+insert into user_kposminin.delivery_huid_20161004
+select distinct
+    a.ymd,
+    a.h_uid_rk,
+    'random' as segment_nm,
+    greatest(exp(2.4*rand()-3.8),0.02) as probability,
+    0.5 as init_score
+from user_kposminin.random_emails_huid a limit 100000;
+
+
+
+
+-- insert expert segments
+insert into user_kposminin.delivery_huid_20161004
+select
+ to_date(actual_dttm) as ymd
+ ,h_uid_rk
+ ,segment_nm
+ ,case when to_date(actual_dttm) in ('2016-10-01') then 0.035*0.64
+       when to_date(actual_dttm) in ('2016-10-02') then 0.035*0.8
+       when to_date(actual_dttm) in ('2016-10-03') then 0.035*1
+ end as probability
+ ,0.035 as init_score
+from
+prod_ex_machina.h_uid_rk_x_segment t1
+where  
+(
+t1.segment_nm in ('need_money_utm')  
+or (t1.segment_nm = 'ccr_landing-y' and t1.probability>=0.85 )   
+or (t1.segment_nm = 'need_money_title'  )
+or (t1.segment_nm = 'need_money_url_list' and t1.probability>=0.7)
+)
+and to_date(actual_dttm) in ('2016-10-01','2016-10-02','2016-10-03') -- 607851
+;
+
+
+create table user_kposminin.delivery_huid_20161004_10m as 
+select h_uid_rk, max(probability) as probability from user_kposminin.delivery_huid_20161004 where probability > 0.0005 group by h_uid_rk;
+
+-- SAS code:
+LIBNAME osmin_H HADOOP  DBMAX_TEXT=250 PORT=10000 TRANSCODE_FAIL=SILENT SERVER="ds-hadoop-cs01p"  SCHEMA=user_kposminin ;
+
+data matemp.delivery_huid_20161004_10m;
+set osmin_H.delivery_huid_20161004_10m;
+run;
+-- /SAS code

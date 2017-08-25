@@ -1,0 +1,188 @@
+MSCK REPAIR TABLE user_kposminin.urlfr_tgt_cnt_201703017;
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 1 
+create table user_kposminin.cred_app_tmp_1 as
+select 
+  phone_mobile, 
+  call_ymd,
+  (unix_timestamp(max(ymd), 'yyyy-MM-dd') - unix_timestamp(min(ymd), 'yyyy-MM-dd'))/60/60/24 as ymd_range,
+  stddev(unix_timestamp(ymd, 'yyyy-MM-dd')/60/60 + avg_hour) as time_std,
+  count(distinct ymd) as ymd_cnt,
+  avg(id_cnt) as id_cnt,
+  avg(avg_hour) as avg_hour,
+  percentile_approx(avg_hour,0.1) as avg_hour_q10,
+  percentile_approx(avg_hour,0.9) as avg_hour_q90,
+  urlfr,
+  count(*) as cnt,
+  sum(cnt) as hits,
+  avg(duration) as avg_duration
+from 
+  user_kposminin.cred_app_visits v
+where
+  call_ymd > ymd and call_ymd < date_add(ymd,180)
+group by
+  phone_mobile, 
+  call_ymd,
+  urlfr
+;
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 2
+create table user_kposminin.cred_app_tmp_2 as 
+  select 
+     v.phone_mobile,     
+     v.call_ymd,
+     v.urlfr,
+     log((t1.cnt_positive + 1)/(t1.cnt_total - t1.cnt_positive + 1)) as score1,
+     t2.score as score2,
+     t3.score as score3,
+     log((t2.cnt_positive + 1)/(t3.cnt_positive - t2.cnt_positive + 1)) as score4,
+     v.cnt,
+     v.hits,
+     v.avg_duration,
+     v.time_std, 
+     v.ymd_range, 
+     v.avg_hour,
+     v.avg_hour_q10, 
+     v.avg_hour_q90, 
+     v.ymd_cnt,
+     substr(y.section_ind, 0, 6) as yaca_ind   
+  from
+     user_kposminin.cred_app_tmp_2 v
+     left join user_kposminin.urlfr_tgt_cnt_201703017 t1 n t1.urlfr = v.urlfr and t1.target = 'ccall'
+     left join user_kposminin.urlfr_tgt_cnt_201703017 t2 n t2.urlfr = v.urlfr and t2.target = 'tinkoff_platinum_approved_application03@tinkoff_action'
+     left join user_kposminin.urlfr_tgt_cnt_201703017 t3 n t3.urlfr = v.urlfr and t3.target = 'tinkoff_platinum_complete_application03@tinkoff_action'
+     left join user_kposminin.yaca_urlfr y on y.urlfr = v.urlfr
+
+;
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 3
+create table user_kposminin.cred_app_tmp_3 as 
+select
+  phone_mobile                   as phone_mobile,
+  call_ymd                       as call_ymd, 
+  yaca_ind                       as yaca_ind,
+  sum(cnt)                       as visits_cnt
+from user_kposminin.cred_app_tmp_2 a
+group by
+  phone_mobile, call_ymd, yaca_ind 
+;
+
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 4
+create table user_kposminin.cred_app_tmp_4 as 
+select
+  phone_mobile                   as phone_mobile,
+  call_ymd                       as call_ymd, 
+  sum(cnt)                       as visits_cnt
+from user_kposminin.cred_app_tmp_2 a
+group by
+  phone_mobile, call_ymd
+;
+
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 5. «десь все врем€ падает. Ћечитс€ хранением таблицы шага 2 в формате bzip2 + выставить настройки
+create table user_kposminin.cred_app_tmp_5_1 as 
+select 
+  phone_mobile as phone_mobile, 
+  call_ymd as call_ymd, 
+  count(*) as cnt, 
+  sum(cnt) as visits_cnt, 
+  sum(hits) as hits, 
+  avg(avg_duration) as avg_duration, 
+  avg(time_std) as avg_time_std, 
+  avg(ymd_range) as avg_ymd_range, 
+  avg(ymd_cnt) as avg_ymd_cnt, 
+  avg(avg_hour) as avg_hour, 
+  avg(avg_hour_q10) as avg_hour_q10, 
+  avg(avg_hour_q90) as avg_hour_q90, 
+  max(score1) as max_score1, 
+  avg(score1) as avg_score1, 
+  percentile_approx(score1,array(0.95,0.9,0.7,0.5,0.3)) as q_arr_score1, 
+  max(score2) as max_score2, 
+  avg(score2) as avg_score2, 
+  percentile_approx(score2,array(0.95,0.9,0.7,0.5,0.3)) as q_arr_score2, 
+  max(score3) as max_score3,
+  avg(score3) as avg_score3, 
+  percentile_approx(score3,array(0.95,0.9,0.7,0.5,0.3)) as q_arr_score3,
+  max(score4) as max_score4,
+  avg(score4) as avg_score4, 
+  percentile_approx(score4,array(0.95,0.9,0.7,0.5,0.3)) as q_arr_score4
+from user_kposminin.cred_app_tmp_2 a 
+group by a.phone_mobile, a.call_ymd
+;
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 5 с половиной
+create table user_kposminin.cred_app_tmp_5_2 as 
+select 
+  phone_mobile as phone_mobile, 
+  call_ymd as call_ymd, 
+  sum(if(urlfr like 'e.mail.ru%',1,0)) as emailru,
+  sum(if(urlfr like 'm.%',1,0))/sum(1) as mobile_share,
+  sum(if(urlfr rlike '^(m\\.)?vk.com%', 1, 0))/sum(1) as vk_share,
+  sum(if(urlfr like 'vk.com%' or urlfr rlike '^(m\\.)?ok\\.ru' or urlfr like 'm.odnoklassniki.ru%' or urlfr rlike '^(m\\.)?my.mail.ru',1,0))/sum(1) as social_share,
+
+  sum(if(avg_hour >= 9 and avg_hour <= 20,cnt,0))/sum(1) as work_hours_hits_share,
+  stddev(avg_hour) as hour_std,  
+  count( if(score1 > 1, urlfr,Null))/sum(1) as good_urlfr_share_score1,
+  count( if(score2 > -7, urlfr,Null))/sum(1) as good_urlfr_share_score2,
+  count( if(score3 > -7, urlfr,Null))/sum(1) as good_urlfr_share_score3,
+  count( if(score4 > 0, urlfr,Null))/sum(1) as good_urlfr_share_score4,
+  avg( if(score1 > 1, time_std ,Null)) as good_urlfr_timestd_score1,
+  max(
+             named_struct(
+             'score1', score1,
+             'time_std', time_std
+             )           
+     ).time_std as max_urlfr_time_std_1
+from user_kposminin.cred_app_tmp_2 a 
+group by a.phone_mobile, a.call_ymd
+;
+
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 6
+create table user_kposminin.cred_app_tmp_6 as 
+select
+  b.phone_mobile                 as phone_mobile,
+  b.call_ymd                     as call_ymd, 
+  concat_ws(" ",sort_array(collect_list(concat(b.yaca_ind,":",format_number(b.visits_cnt/greatest(c.visits_cnt,cast(1 as bigint)),5))))) as yaca_str
+  
+from user_kposminin.cred_app_tmp_3 b 
+  left join user_kposminin.cred_app_tmp_5_1 c on c.phone_mobile = b.phone_mobile and c.call_ymd = b.call_ymd
+group by
+  b.phone_mobile, b.call_ymd ;
+ 
+-- √енераци€ простыни признаков дл€ кред скоринга. шаг 7 и последний
+create table user_kposminin.cred_app_scoring as
+select
+  a.*,
+  c.emailru, 
+  c.mobile_share, 
+  c.vk_share, 
+  c.social_share,
+  c.work_hours_hits_share, 
+  c.hour_std, 
+  c.good_urlfr_share_score1, 
+  c.good_urlfr_share_score2, 
+  c.good_urlfr_share_score3, 
+  c.good_urlfr_share_score4, 
+  c.good_urlfr_timestd_score1, 
+  c.max_urlfr_time_std_1, 
+  b.yaca_str
+from
+  user_kposminin.cred_app_tmp_5_1 a
+  left join user_kposminin.cred_app_tmp_6 b on b.phone_mobile = a.phone_mobile and b.call_ymd = a.call_ymd
+  left join user_kposminin.cred_app_tmp_5_2 c on c.phone_mobile = a.phone_mobile and c.call_ymd = a.call_ymd
+;
+
+-- ‘ичи кред скоринга с меткой
+create table user_kposminin.cred_app_scoring_2 as
+select 
+  b.default_flg, 
+  b.financial_product_type_cd,
+  a.*
+from 
+  user_kposminin.cred_app_scoring a
+  left join user_kposminin.cred_app_id_phone b on a.phone_mobile = b.phone_num and a.call_ymd = date_add(b.retro_date, 1)
+  ;
+
+select count(*),count(financial_product_type_cd),count(default_flg),count(phone_mobile) from user_kposminin.cred_app_scoring_2 ;
+

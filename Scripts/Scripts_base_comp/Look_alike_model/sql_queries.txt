@@ -1,0 +1,89 @@
+create table user_kposminin.access_log_sample as
+select *
+from prod_raw_liveinternet.access_log  a
+    where 
+      (ymd between '2016-06-01' and '2016-06-02' or ymd = '2016-06-30')
+      and hash(a.id) % 10000 = 0
+;
+
+
+create table user_kposminin.urls_w_levels3 as
+select
+    a.id as cookie
+    ,concat(a.id, "-", a.ymd) as object_id
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)', 1) as ref_domain
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2
+    ,a.referrer
+    ,a.timestamp
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.*,
+              count(*) over (partition by url) as url_count
+           from access_log_sample al
+              where ymd between '2016-06-01' and '2016-06-02' or ymd = '2016-06-30'
+           ) b
+       where b.url_count > 100
+    ) a
+;
+
+
+
+
+
+create table user_kposminin.user_urlp5 as 
+select 
+    concat(cookie,case when (ymd = '2016-06-30') then 1 else 0 end) as id,
+    urlp
+from
+   (select 
+        cookie,
+        domain as urlp,
+        ymd
+    from user_kposminin.urls_w_levels5
+    union all
+    select
+        cookie,
+        concat(domain,'[0]',lev0) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels5
+    union all
+    select 
+        cookie,
+        concat(domain,'[1]',lev1) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels5
+    union all
+    select 
+        cookie,
+        concat(domain,'[2]',lev2) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels5
+    ) a;
+    
+
+select
+   id,
+   sum(case when (urlp like 'avito.ru') then 1 else 0 end)
+from 
+   user_kposminin.user_urlp5
+group by id
+
+select
+   cookie,
+   domain,
+   count(*) over (partition by domain)
+from user_kposminin.urls_test
+;
+
+

@@ -1,0 +1,51 @@
+Segment preformance comparison 
+
+-- Count comparison
+select 'in ETL joined by BDS' as title, a.ymd, count(a.ymd) as ETL_cnt,count(b.ymd) as BDS_cnt, max(abs(a.probability - b.score)) as max_abs_score_diff,avg(abs(a.probability - b.score)) as avg_abs_score_diff
+from prod_ex_machina.user_segment a 
+left join prod_lookalike.phone_x_segment b on a.wu_rk = b.phone_num and a.ymd = b.ymd and a.segment_nm = b.segment_nm
+where 
+  a.segment_nm = 'la_apppr_ccall_2' 
+group by a.ymd
+
+union all
+
+select 'in BDS joined by ETL' as title, b.ymd, count(a.ymd) as ETL_cnt,count(b.ymd) as BDS_cnt, max(abs(a.probability - b.score)) as max_abs_score_diff,avg(abs(a.probability - b.score)) as avg_abs_score_diff
+from prod_lookalike.phone_x_segment b
+left join prod_ex_machina.user_segment a on a.wu_rk = b.phone_num and a.ymd = b.ymd and a.segment_nm = b.segment_nm
+where 
+  b.segment_nm = 'la_apppr_ccall_2' and b.ymd > '2017-04-01'
+group by b.ymd
+;
+
+
+-- Score comparison
+select b.*,a.*
+  from prod_ex_machina.user_segment a 
+  inner join prod_lookalike.phone_x_segment b on a.wu_rk = b.phone_num and a.ymd = b.ymd and a.segment_nm = b.segment_nm
+where 
+  a.segment_nm = 'la_apppr_ccall_2' 
+  and abs(a.probability - b.score) > 0.1 
+limit 100
+;
+
+
+-- Extract missing rows
+select b.* 
+from prod_lookalike.phone_x_segment b
+left join prod_ex_machina.user_segment a on a.wu_rk = b.phone_num and a.ymd = b.ymd and a.segment_nm = b.segment_nm
+where a.wu_rk is Null and b.segment_nm = 'la_apppr_ccall_2' and b.ymd > '2017-04-05'; 
+
+
+-- Calc time
+select 
+  ymd,
+  count(*) as cnt,
+  max(load_dttm) as load_dttm
+from
+  prod_ex_machina.user_segment
+where
+  segment_nm = 'la_apppr_ccall_2'
+group by
+  ymd
+  ;

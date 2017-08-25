@@ -1,0 +1,106 @@
+%let start_date1 = %eval(%sysfunc(today()) - 45);
+%let start_date2 = (today() - 45);
+%let start_ymd1 = %sysfunc(putn(&start_date1, yymmdd10.));
+/*Выбираем интересующихся с емейлом*/
+
+
+PROC SQL;
+   CREATE TABLE wu_normal_emails_1 AS 
+   SELECT t1.email_address_txt, h_uid_rk
+      FROM matemp.FRANK_BD_cc_regl_h_cont t1
+      WHERE t1.ymd>/*'2016-05-25'*/ "&start_ymd1";
+QUIT;
+
+PROC SQL;
+   CREATE TABLE wu_normal_emails_2 AS 
+   SELECT t1.email_address_txt, h_uid_rk
+      FROM matemp.FRANK_BD_dw_regl_h_cont t1
+      WHERE t1.dt>&start_date2
+and (t1.segment_nm in ('need_money_utm'/*, 'need_money_title', 'need_money_url_list'*/)  
+or (t1.segment_nm = 'ccr_landing-y' and t1.probability>=0.85 )   
+or (t1.segment_nm = 'need_money_title' /*and t1.probability>=0.6*/ )
+or (t1.segment_nm = 'need_money_url_list' and t1.probability>=0.7 ));
+QUIT;
+
+PROC SQL;
+   CREATE TABLE wu_normal_emails AS 
+   SELECT t1.* FROM wu_normal_emails_1 t1   
+outer union corr
+SELECT t2.* FROM wu_normal_emails_2 t2  
+ /*outer union corr
+SELECT t3.* FROM wu_normal_emails_3 t3 */
+  
+;
+QUIT;
+/*Удаляем клиентов из выборки и кривые емейлы*/
+
+PROC SQL;
+   CREATE TABLE frank_wu AS 
+   SELECT distinct 
+   t1.email_address_txt, h_uid_rk
+      FROM WORK.WU_NORMAL_EMAILS t1
+      WHERE
+t1.email_address_txt not in (select email_address_txt from &intable) 
+;
+QUIT;
+
+/*Итоговая выборка для рассылки через ЕТ*/
+PROC SQL;
+   CREATE TABLE matemp.frank_bd_cc_regl AS 
+   SELECT DISTINCT t1.email_address_txt,
+t1.email_address_txt as email,
+                                                               min(t1.h_uid_rk) as wu_rk,
+                                                               today() as date FORMAT=AFRDFDD8.
+      FROM frank_wu t1
+                  group by  t1.email_address_txt
+;
+QUIT;
+
+/*Емейлы для рассылки через ЕТ*/
+PROC SQL;
+   CREATE TABLE utTable AS 
+   SELECT DISTINCT t1.email_address_txt
+      FROM matemp.frank_bd_cc_regl t1
+                  where  t1.date=today()
+;
+QUIT;
+
+From: Foynitskiy Pavel 
+Sent: Tuesday, September 27, 2016 5:13 PM
+To: Osminin Konstantin Pavlovich
+Subject: RE: Сегменты по кредиткам
+
+%let start_date20 = %eval(%sysfunc(today()) - 45);
+%let start_ymd20 = %sysfunc(putn(&start_date20, yymmdd10.));
+
+From: Foynitskiy Pavel 
+Sent: Tuesday, September 27, 2016 5:12 PM
+To: Osminin Konstantin Pavlovich
+Subject: RE: Сегменты по кредиткам
+
+
+PROC SQL;
+   CREATE TABLE matemp.FRANK_BD_cc_regl2_h AS 
+   SELECT DISTINCT t1.*
+      FROM matemp.FRANK_BD_cc_regl_new_h t1
+
+;
+QUIT;
+
+PROC SQL;
+   CREATE TABLE FRANK_BD_cc_regl__h  AS 
+   SELECT distinct t1.h_uid_rk, max(t1.ymd) as ymd
+      FROM matemp.FRANK_BD_cc_regl2_h t1
+       where t1.ymd>"&start_ymd20"
+       group by t1.h_uid_rk
+       
+                ;
+QUIT;
+
+PROC SQL;
+   CREATE TABLE matemp.FRANK_BD_cc_regl_h_cont  AS
+   SELECT distinct t1.ymd, t2.email_address_txt, min(t1.h_uid_rk) as h_uid_rk
+      FROM FRANK_BD_cc_regl__h t1 inner join matemp.frank_bd_hUID_eml t2 on t1.h_uid_rk=t2.h_uid_rk
+       group by t2.email_address_txt
+                ;
+QUIT;

@@ -1,0 +1,147 @@
+create table user_kposminin.access_log_sample as
+select *
+from prod_raw_liveinternet.access_log  a
+    where 
+      (ymd between '2016-06-01' and '2016-06-02' or ymd = '2016-06-30')
+      and hash(a.id) % 10000 = 0
+;
+
+
+create table user_kposminin.urls_w_levels_train6 as
+select
+    a.id as cookie
+    ,concat(a.id, "-", a.ymd) as object_id
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)', 1) as ref_domain
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2
+    ,a.referrer
+    ,a.timestamp
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.*,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd between '2016-06-01' and '2016-06-02'
+           ) b
+       where b.url_count > 100
+    ) a
+;
+
+create table user_kposminin.urls_w_levels_test6 as
+select
+    a.id as cookie
+    ,concat(a.id, "-", a.ymd) as object_id
+    ,a.ymd
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)', 1) as domain
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) lev0
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) lev1
+    ,regexp_extract(regexp_extract(a.url, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) lev2
+    ,a.url
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)', 1) as ref_domain
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?', 2) ref_lev0
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?', 3) ref_lev1
+    ,regexp_extract(regexp_extract(a.referrer, "([^\?]*)", 0), '^([^/]*)/?([^/]*)?/?([^/]*)?/?([^/]*)?', 4) ref_lev2
+    ,a.referrer
+    ,a.timestamp
+    from 
+    (
+       select b.*
+        from
+           (select
+              al.*,
+              count(*) over (partition by url) as url_count
+           from prod_raw_liveinternet.access_log al
+              where ymd = '2016-06-30'
+           ) b
+       where b.url_count > 100
+    ) a
+;
+
+
+
+create table user_kposminin.user_urlp6 as 
+   (select 
+        concat(cookie, 0) as cookie,
+        0 as test_sample,
+        domain as urlp,
+        ymd        
+    from user_kposminin.urls_w_levels_train6
+    union all
+    select
+        concat(cookie, 0) as cookie,
+        0 as test_sample,
+        concat(domain,'[0]',lev0) as urlp,
+        ymd        
+     from user_kposminin.urls_w_levels_train6
+    union all
+    select 
+        concat(cookie, 0) as cookie,
+        0 as test_sample,
+        concat(domain,'[1]',lev1) as urlp,
+        ymd        
+    from user_kposminin.urls_w_levels_train6
+    union all
+    select 
+        concat(cookie, 0) as cookie,
+        0 as test_sample,
+        concat(domain,'[2]',lev2) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels_train6
+    ) a1
+    union all
+   (select 
+        concat(cookie, 1) as cookie,
+        1 as test_sample,
+        domain as urlp,
+        ymd
+    from user_kposminin.urls_w_levels_test6
+    union all
+    select
+        concat(cookie, 1) as cookie,
+        1 as test_sample,
+        concat(domain,'[0]',lev0) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels_test6
+    union all
+    select 
+        concat(cookie, 1) as cookie,
+        1 as test_sample,
+        concat(domain,'[1]',lev1) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels_test6
+    union all
+    select 
+        concat(cookie, 1) as cookie,
+        1 as test_sample,
+        concat(domain,'[2]',lev2) as urlp,
+        ymd
+    from user_kposminin.urls_w_levels_test6
+    ) a2
+;
+    
+create table user_kposminin.id6
+select
+   id,
+   test,
+   sum(case when (urlp like '%raiffeisen.ru/retail/cards/credit/%') then 1 else 0 end) as label
+from 
+   user_kposminin.user_urlp5
+group by id;
+
+select
+   cookie,
+   domain,
+   count(*) over (partition by domain)
+from user_kposminin.urls_test
+;
+

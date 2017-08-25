@@ -1,0 +1,601 @@
+
+select * from
+(select 
+    *,
+    count(email) over (partition by email, model) as cnt 
+from user_mvsurovikov.la_cc_scored_20160809_3) a
+
+where cnt>1;
+
+---------------- 
+
+select 
+   d.*,
+   (t.email is NULL) as control,
+   s.model,
+   s.score
+from 
+   user_kposminin.delivery_results2 d
+    left join (select `_1` as email from user_mvsurovikov.la_cc_emails_hashed_ctrl_20160809) t
+    on d.email = t.email
+   left join
+     (select 
+        email,
+        model,
+        max(score) as score
+      from
+        user_mvsurovikov.la_cc_scored_20160809_3
+      group by 
+        email,
+        model
+      order by 1,2) s
+     on
+      d.email = s.email
+;
+
+
+
+
+select 
+    eu.email,
+    eu.utm_term,
+    (pa.is_processed = 3) as completed
+from
+    (select 
+        '_1' as email,
+        '_2' as utm_term
+    from
+        (
+        select * from user_mvsurovikov.la_cc_emails_hashed_ctrl_20160809 
+        union all
+        select * from user_mvsurovikov.la_cc_emails_hashed_20160809 
+        ) a
+    ) eu
+join prod_dds.portal_application pa 
+on eu.utm_term = pa.utm_term
+;
+
+
+select 
+    eu.email,
+    eu.utm_term,
+    (pa.is_processed = 3) as completed
+from
+    (select 
+        '_1' as email,
+        '_2' as utm_term
+    from
+        (
+        select * from user_mvsurovikov.la_cc_emails_hashed_ctrl_20160809 
+        union all
+        select * from user_mvsurovikov.la_cc_emails_hashed_20160809 
+        ) a
+    ) eu
+join prod_dds.portal_application pa 
+on eu.utm_term = pa.utm_term
+;
+
+
+
+
+drop table if exists user_kposminin.delivery_results3;
+
+create table user_kposminin.delivery_results3 as 
+select 
+   d.*,
+   (t.email is NULL) as control,
+   s.model,
+   s.score,
+   not (eu.utm_term is NULL) as started,
+   (pa.is_processed = 3) as completed
+
+from 
+   user_kposminin.delivery_results2 d
+    left join (select `_1` as email from user_mvsurovikov.la_cc_emails_hashed_ctrl_20160809) t
+    on d.email = t.email
+   left join
+     (select 
+        email,
+        model,
+        max(score) as score
+      from
+        user_mvsurovikov.la_cc_scored_20160809_3
+      group by 
+        email,
+        model
+      order by 1,2) s
+     on
+      d.email = s.email
+left join
+    (select 
+        `_1` as email,
+        `_2` as utm_term
+    from
+        (
+        select * from user_mvsurovikov.la_cc_emails_hashed_ctrl_20160809 
+        union all
+        select * from user_mvsurovikov.la_cc_emails_hashed_20160809 
+        ) a
+    ) eu
+on d.email = eu.email
+left join prod_dds.portal_application pa 
+on eu.utm_term = pa.utm_term
+;
+
+
+
+create table user_kposminin.access_log_sample2 as
+select * from prod_raw_liveinternet.access_log
+where
+(ymd between '2016-05-06' and '2016-05-10' or ymd = '2016-06-10')
+and hash(id) % 1000 = 5;
+
+/*
+create table user_kposminin.access_log_sample3 as
+select * from prod_raw_liveinternet.access_log
+where
+(ymd between '2016-05-06' and '2016-05-10' or ymd = '2016-06-10')
+and hash(id) % 100 = 4;
+*/
+
+
+create table user_kposminin.la_user_score_20160808 as
+select
+ b.contact_str as email
+ ,a.model
+ ,max(a.score) as score
+ ,a.id as cookie 
+from
+ user_mvsurovikov.la_cc_scored_20160808_2 a
+ inner join user_mvsurovikov.cookie_x_contact b on a.id = b.cookie_id and b.contact_type_cd = 'EMAIL'
+group by
+ b.contact_str
+ ,a.model
+ ,a.id;
+
+
+
+CREATE EXTERNAL TABLE `user_kposminin.model_target_urls1`(
+      `model` string, 
+      `target_url` string,
+      )
+    ROW FORMAT SERDE 
+      'org.apache.hadoop.hive.serde2.OpenCSVSerde' 
+    WITH SERDEPROPERTIES ( 
+      'escapeChar'='\\', 
+      'quoteChar'='\"', 
+      'separatorChar'=';') 
+    STORED AS INPUTFORMAT 
+      'org.apache.hadoop.mapred.TextInputFormat' 
+    OUTPUTFORMAT 
+      'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+    LOCATION
+      'hdfs://nameservice1/user/kposminin/data'
+
+
+
+select
+    b.id as cookie
+    ,b.url
+    ,c.model
+from 
+    (select * from prod_raw_liveinternet.access_log where ymd = '2016-08-08') b
+    left join user_kposminin.model_target_urls1 c
+where
+    b.url like c.target_url
+
+;
+
+
+
+create table user_kposminin.la_users_label_20160808 as
+select
+    cookie
+    ,model
+from
+    (select
+       cookie
+       , model
+       , count(model) over (partition by cookie) as mcount
+    from
+        (
+        select distinct
+            b.id as cookie
+            ,c.model
+        from 
+            (select * from prod_raw_liveinternet.access_log where ymd = '2016-08-08') b
+            left join user_kposminin.model_target_urls1 c
+        where
+            b.url like c.target_url
+        ) d
+     ) e
+where
+    (e.mcount > 1 and (not model is NULL))
+    or e.mcount = 1;
+
+
+select
+   modelnum,count(distinct cookie)
+from
+	(select
+ 	   a.*,
+ 	   count(model) over (partition by cookie) as modelnum
+	from
+	    la_users_label_20160808 a
+	) b
+group by modelnum;
+
+
+create table user_kposminin.la_direct_deliv_results_20160808 as
+select 
+     a.*
+     ,c.abuse
+     ,c.open
+     ,c.click
+     ,c.unsubscribe
+     ,c.err_spam
+     ,c.err_not_exists
+     ,c.err_not_active
+     ,c.control
+     ,c.score as cscore
+     ,c.started
+     ,c.utm_term
+     ,c.completed
+from
+    user_kposminin.la_user_score_20160808 a
+    inner join user_kposminin.la_users_label_20160808 b
+        on a.cookie = b.cookie and a.model = b.model
+    left join user_kposminin.delivery_results3 c
+        on a.email = c.email and a.model = c.model
+
+
+
+select 
+    model,
+    control,
+    count(model),
+    sum(case when open then 1 else 0 end) as open,
+    sum(case when click then 1 else 0 end) as click,
+    sum(case when started then 1 else 0 end) as started,
+    sum(case when completed then 1 else 0 end) as completed,
+    sum(case when unsubscribe then 1 else 0 end) as unsubscribe,
+    sum(case when err_spam then 1 else 0 end) as err_spam,
+    sum(case when err_not_exists then 1 else 0 end) as err_not_exists,
+    sum(case when err_not_active then 1 else 0 end) as err_not_active
+    
+from  user_kposminin.la_direct_deliv_results_20160809_1 
+where (not cemail is NULL)
+and err_not_exists = False
+and err_not_active = False
+and control = False
+group by 
+    model,control
+;
+
+
+
+-- Results
+
+select 
+    model,
+    count(email) as cnt,
+    sum(case when open then 1 else 0 end) as open,
+    sum(case when click then 1 else 0 end) as click,
+    sum(case when started then 1 else 0 end) as started,
+    sum(case when completed then 1 else 0 end) as completed
+    
+from  user_kposminin.la_direct_deliv_results_20160809_1 
+where (not cemail is NULL)
+and err_not_exists = False
+and err_not_active = False
+and control = False
+group by model
+;
+
+select 
+    'Total',
+    count(email) as cnt,
+    sum(case when open then 1 else 0 end) as open,
+    sum(case when click then 1 else 0 end) as click,
+    sum(case when started then 1 else 0 end) as started,
+    sum(case when completed then 1 else 0 end) as completed    
+from 
+    (select
+       email,
+       max(open) as open,
+       max(click) as click,
+       max(started) as started,
+       max(completed) as completed
+     from
+       user_kposminin.la_direct_deliv_results_20160809_1 
+     where 
+       (not cemail is NULL)
+       and err_not_exists = False
+       and err_not_active = False
+       and control = False
+     group by email
+   ) a
+
+;
+
+create table user_kposminin.user_param_train18 as
+select
+    -- cs.cookie,
+    cs.max_score,
+    cs.sum_score,
+    cs.avg_score,
+    cs.scores_list,
+    i.label    
+from
+    (select 
+        u.cookie,
+        max(s.score) as max_score,
+        sum(s.score) as sum_score,
+        avg(s.score) as avg_score,
+        sum(cnt) as cnt,
+        count(u.urlp) as uniq_cnt,
+        max(u.urlp like 'm.%') as mobile,
+        max(u.urlp like '%e.mail.ru%') as e_mailru,
+        max(case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        max(case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as odnoklassniki,
+        max(case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        max(u.urlp like '%instagram.com%') as instagram,
+        max(case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other,
+        sort_array(collect_list(s.score)) as scores_list
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train18
+         group by cookie, urlp) u
+    join (
+      select * from user_kposminin.urlp_score_train18
+      where True
+      order by score desc
+    ) s
+    on u.urlp = s.urlp
+    group by u.cookie) cs
+join user_kposminin.user_train18 i
+on i.cookie = cs.cookie
+
+
+
+-- create table user_kposminin.user_param_train18 as
+select
+    i.label,
+    cs.*
+from
+    (select 
+        u.cookie,
+        max(s.score) as max_score,
+        sum(s.score) as sum_score,
+        avg(s.score) as avg_score,
+        sum(cnt) as cnt,
+        count(u.urlp) as uniq_cnt,
+        max(u.urlp like 'm.%') as mobile,
+        max(u.urlp like '%e.mail.ru%') as e_mailru,
+        max(case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        max(case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as odnoklassniki,
+        max(case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        max(u.urlp like '%instagram.com%') as instagram,
+        max(case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other,
+        sort_array(collect_list(s.score)) as scores_list
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train18
+         group by cookie, urlp) u
+    join (
+      select * from user_kposminin.urlp_score_train18
+      where True
+      order by score desc
+    ) s
+    on u.urlp = s.urlp
+    group by u.cookie) cs
+join user_kposminin.user_train18 i
+on i.cookie = cs.cookie;
+
+
+select
+    i.label,
+    max(s.score) as max_score,
+    sum(s.score) as sum_score,
+    avg(s.score) as avg_score,
+    sum(cnt) as cnt,
+    count(u.urlp) as uniq_cnt,
+       max(u.urlp like 'm.%') as mobile,
+        max(u.urlp like '%e.mail.ru%') as e_mailru,
+        max(case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        max(case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as odnoklassniki,
+        max(case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        max(u.urlp like '%instagram.com%') as instagram,
+        max(case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other,
+    
+    cs.*
+from
+    (select 
+        u.cookie,
+        u.urlp,
+        s.score,
+        (u.urlp like 'm.%') as mobile,
+        (u.urlp like '%e.mail.ru%') as e_mailru,
+        (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as odnoklassniki,
+        (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        (u.urlp like '%instagram.com%') as instagram,
+        (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other,
+
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train18
+         group by cookie, urlp) u
+    left join user_kposminin.urlp_score_train18 s
+        on u.urlp = s.urlp
+    group by u.cookie, u.urlp
+    order by score desc
+    ) cs
+join user_kposminin.user_train18 i
+on i.cookie = cs.cookie;
+
+
+select
+    a.cookie,
+    max(a.score) as max_score,
+    sum(a.score) as sum_score,
+    avg(a.score) as avg_score,
+    sum(a.cnt) as cnt,
+    count(a.urlp) as uniq_cnt,
+    max(mobile) as mobile,
+    max(e_mailru) as e_mailru,
+    max(vk) as vk,
+    max(okru) as odnoklassniki,
+    max(fb) as fb,
+    max(instagram) as instagram,
+    max(social_other) as social_other,
+    concat_ws(",",a.score) as score_list_str
+from
+    (select 
+        u.cookie,
+        u.urlp,
+        s.score,
+        u.cnt,
+        (u.urlp like 'm.%') as mobile,
+        (u.urlp like '%e.mail.ru%') as e_mailru,
+        (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+        (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        (u.urlp like '%instagram.com%') as instagram,
+        (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train23
+         group by cookie, urlp) u
+    left join user_kposminin.urlp_score_train23 s
+        on u.urlp = s.urlp
+    order by score desc
+    ) a
+group by cookie;
+
+
+drop table if exists user_kposminin.user_param_train24;
+
+create table user_kposminin.user_param_train24 as
+select
+    a.cookie,
+    max(a.score) as max_score,
+    sum(a.score) as sum_score,
+    avg(a.score) as avg_score,
+    sum(a.cnt) as cnt,
+    count(a.urlp) as uniq_cnt,
+    max(mobile) as mobile,
+    max(e_mailru) as e_mailru,
+    max(vk) as vk,
+    max(okru) as odnoklassniki,
+    max(fb) as fb,
+    max(instagram) as instagram,
+    max(social_other) as social_other,
+    substr(concat_ws(",",collect_list(substr(a.score,1,9))),10*10) as score_list_str
+from
+    (select 
+        u.cookie,
+        u.urlp,
+        s.score,
+        u.cnt,
+        (u.urlp like 'm.%') as mobile,
+        (u.urlp like '%e.mail.ru%') as e_mailru,
+        (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+        (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        (u.urlp like '%instagram.com%') as instagram,
+        (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train23
+         group by cookie, urlp) u
+    left join user_kposminin.urlp_score_train23 s
+        on u.urlp = s.urlp
+    order by score desc
+    ) a
+group by cookie;
+
+
+
+drop table if exists user_kposminin.user_param_train25;
+
+create table user_kposminin.user_param_train25 as
+select
+    a.cookie,
+    max(a.score) as max_score,
+    sum(a.score) as sum_score,
+    avg(a.score) as avg_score,
+    sum(a.cnt) as cnt,
+    count(a.urlp) as uniq_cnt,
+    max(mobile) as mobile,
+    max(e_mailru) as e_mailru,
+    max(vk) as vk,
+    max(okru) as odnoklassniki,
+    max(fb) as fb,
+    max(instagram) as instagram,
+    max(social_other) as social_other,
+    substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str
+from
+    (select 
+        u.cookie,
+        u.urlp,
+        s.score,
+        u.cnt,
+        (u.urlp like 'm.%') as mobile,
+        (u.urlp like '%e.mail.ru%') as e_mailru,
+        (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+        (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        (u.urlp like '%instagram.com%') as instagram,
+        (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_train23
+         group by cookie, urlp) u
+    left join user_kposminin.urlp_score_train23 s
+        on u.urlp = s.urlp
+    order by score desc
+    ) a
+group by cookie;
+
+drop table if exists user_kposminin.user_param_test23;
+
+create table user_kposminin.user_param_test23 as
+select
+    a.cookie,
+    max(a.score) as max_score,
+    sum(a.score) as sum_score,
+    avg(a.score) as avg_score,
+    sum(a.cnt) as cnt,
+    count(a.urlp) as uniq_cnt,
+    max(mobile) as mobile,
+    max(e_mailru) as e_mailru,
+    max(vk) as vk,
+    max(okru) as odnoklassniki,
+    max(fb) as fb,
+    max(instagram) as instagram,
+    max(social_other) as social_other,
+    substr(concat_ws(",",collect_list(substr(a.score,1,9))), 1, 10*10) as score_list_str
+from
+    (select 
+        u.cookie,
+        u.urlp,
+        s.score,
+        u.cnt,
+        (u.urlp like 'm.%') as mobile,
+        (u.urlp like '%e.mail.ru%') as e_mailru,
+        (case when (u.urlp rlike '[^A-Za-z]vk.com')  or (u.urlp like 'vkontakte.%') or (u.urlp rlike '[^A-Za-z]vk.me') or (u.urlp rlike '[^A-Za-z]vk.cc') then 1 else 0 end) as vk,
+        (case when (u.urlp like '%ok.ru%') or (u.urlp like '%odnoklassniki.ru%') then 1 else 0 end) as okru,
+        (case when (u.urlp rlike '[^A-Za-z]fb.com') or (u.urlp like '%facebook.com%') then 1 else 0 end) as fb,
+        (u.urlp like '%instagram.com%') as instagram,
+        (case when (u.urlp like '%my.mail.ru%') or (u.urlp like '%twitter.com%') or (u.urlp like '%livejournal.com%') or (u.urlp rlike '[^A-Za-z]lj.ru') then 1 else 0 end) as social_other
+    from 
+        (select cookie, urlp, count(cookie) as cnt
+         from user_kposminin.user_urlp_test23
+         group by cookie, urlp) u
+    left join user_kposminin.urlp_score_train23 s   -- urlp_score_train! not urlp_score_test.
+        on u.urlp = s.urlp
+    order by score desc
+    ) a
+group by cookie;
+    
