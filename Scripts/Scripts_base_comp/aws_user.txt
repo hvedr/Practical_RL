@@ -1,7 +1,0 @@
-arn:aws:iam::827609175542:group/Konstantin
-
-Sign-in URL: https://827609175542.signin.aws.amazon.com/console
-User name: Konstantin
-
-Access key ID  AKIAJKFLVPZCBNYS45LQ
-Secret access key  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

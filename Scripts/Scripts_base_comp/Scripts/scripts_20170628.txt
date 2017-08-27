@@ -1,8 +1,0 @@
--- cred score efficiency check
-create table user_kposminin.cred_scor_test_201706 as
-select
-  a.*,ps.score
-  from prod_ccall.full_app_201706 a
- inner join prod_lookalike.phone_x_segment ps on substr(ps.phone_num,3,20) = substr(a.phone_mobile, 2,20) and ps.ymd = date_add(a.ymd, -1)
- where ps.segment_nm = 'cred_score_1'   
-;
